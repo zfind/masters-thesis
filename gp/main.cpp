@@ -3,6 +3,7 @@
 #include <stack>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 
 using namespace std;
 
@@ -184,6 +185,76 @@ int getValidLength(vector<uint> &solution) {
 }
 
 
+double evaluate(vector<uint>& solution, vector<double >& input) {
+    double xx = 0.;
+    int validLength = getValidLength(solution);
+    stack<double> st;
+    int stackCount = 0;
+
+    double o1, o2, tmp;
+    for (int i=0; i < validLength; i++) {
+        switch (solution[i]) {
+            case ADD:
+                o2 = st.top(); st.pop();
+                o1 = st.top(); st.pop();
+                stackCount -= 2;
+                tmp = o1 + o2;
+                st.push(tmp);
+                stackCount++;
+                break;
+            case SUB:
+                o2 = st.top(); st.pop();
+                o1 = st.top(); st.pop();
+                stackCount -= 2;
+                tmp = o1 - o2;
+                st.push(tmp);
+                stackCount++;
+                break;
+            case MUL:
+                o2 = st.top(); st.pop();
+                o1 = st.top(); st.pop();
+                stackCount -= 2;
+                tmp = o1 * o2;
+                st.push(tmp);
+                stackCount++;
+                break;
+            case DIV:
+                o2 = st.top(); st.pop();
+                o1 = st.top(); st.pop();
+                stackCount -= 2;
+                tmp = (abs(o2) > 10E-9) ? o1 / o2 : 1.;
+                st.push(tmp);
+                stackCount++;
+                break;
+            case SQR:
+                o1 = st.top(); st.pop();
+                stackCount--;
+                tmp = (o1 >= 0.) ? sqrt(o1) : 1;
+                st.push(tmp);
+                stackCount++;
+                break;
+            case SIN:
+                o1 = st.top(); st.pop();
+                stackCount--;
+                tmp = sin(o1);
+                st.push(tmp);
+                stackCount++;
+                break;
+            case ERR:
+                return -1.;
+            default:
+                tmp = input[solution[i]];
+                st.push(tmp);
+                stackCount++;
+                cout << "pushed " << tmp << endl;
+                break;
+        }
+    }
+    cout << "st.size():\t" << st.size() << "\tstackcount:\t" << stackCount<<endl;
+    return st.top();
+}
+
+
 int main() {
     srand((unsigned) time(nullptr));
 
@@ -192,4 +263,14 @@ int main() {
     printSolution(individual);
 
     cout << "valid length:\t" << getValidLength(individual) << endl;
+
+    vector<uint> test1  = {0, 1, MUL, 1, 0, SIN, DIV, ADD};
+    vector<double> input = {3., 5.};
+
+    cout<< "valid:\t" << getValidLength(test1) << endl;
+    double eval = evaluate(test1, input);
+    cout << "eval:\t" << eval << endl;
+
+
+    return 0;
 }
