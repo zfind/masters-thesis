@@ -14,6 +14,10 @@ using namespace std;
 #define SIN 0xFFFFFFF5
 #define ERR 0xFFFFFFFF
 
+#define OPERAND 0
+#define UNARY   1
+#define BINARY  2
+
 typedef unsigned int uint;
 
 
@@ -111,14 +115,8 @@ vector<uint> generateIndividual(int chromosomeLength) {
     return solution;
 }
 
-
-int main() {
-    srand((unsigned) time(nullptr));
-
-    vector<uint> individual = generateIndividual(10);
-
-
-    for (uint i : individual) {
+void printSolution(vector<uint> &solution) {
+    for (uint i : solution) {
         switch (i) {
             case ADD:
                 cout << "ADD" << endl;
@@ -143,5 +141,55 @@ int main() {
                 break;
         }
     }
+}
 
+int getArity(uint i) {
+    switch (i) {
+        case ADD:
+        case SUB:
+        case MUL:
+        case DIV:
+            return BINARY;
+        case SQR:
+        case SIN:
+            return UNARY;
+        default:
+            return OPERAND;
+    }
+}
+
+int getValidLength(vector<uint> &solution) {
+    int length = solution.size();
+    int count = 0, validpos = 0;
+    int validLength = 0;
+    for (int i = 0; i < length; i++) {
+        int arity = getArity(solution[i]);
+        if (arity == OPERAND) {
+            count++;
+        } else if (arity == UNARY) {
+            count = count - (UNARY - 1);
+        } else if (arity == BINARY) {
+            count = count - (BINARY - 1);
+        }
+
+        if (count == 0) {
+            break;
+        }
+        if (count == 1) {
+            validpos = i;
+        }
+    }
+    validLength = validpos + 1;
+    return validLength;
+}
+
+
+int main() {
+    srand((unsigned) time(nullptr));
+
+    vector<uint> individual = generateIndividual(10);
+
+    printSolution(individual);
+
+    cout << "valid length:\t" << getValidLength(individual) << endl;
 }
