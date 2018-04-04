@@ -132,7 +132,7 @@ void printSolution(vector<uint> &solution) {
                 cout << "DIV" << endl;
                 break;
             case SQR:
-                cout << "SQR" << endl;
+                cout << "SQT" << endl;
                 break;
             case SIN:
                 cout << "SIN" << endl;
@@ -185,73 +185,78 @@ int getValidLength(vector<uint> &solution) {
 }
 
 
-double evaluate(vector<uint>& solution, vector<double >& input) {
-    double xx = 0.;
+double evaluate(vector<uint> &solution, vector<double> &input) {
     int validLength = getValidLength(solution);
-    stack<double> st;
-    int stackCount = 0;
+
+    double* stack = new double[validLength];
+    int SP = 0;
 
     double o1, o2, tmp;
-    for (int i=0; i < validLength; i++) {
+
+    for (int i = 0; i < validLength; i++) {
         switch (solution[i]) {
             case ADD:
-                o2 = st.top(); st.pop();
-                o1 = st.top(); st.pop();
-                stackCount -= 2;
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
                 tmp = o1 + o2;
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case SUB:
-                o2 = st.top(); st.pop();
-                o1 = st.top(); st.pop();
-                stackCount -= 2;
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
                 tmp = o1 - o2;
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case MUL:
-                o2 = st.top(); st.pop();
-                o1 = st.top(); st.pop();
-                stackCount -= 2;
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
                 tmp = o1 * o2;
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case DIV:
-                o2 = st.top(); st.pop();
-                o1 = st.top(); st.pop();
-                stackCount -= 2;
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
                 tmp = (abs(o2) > 10E-9) ? o1 / o2 : 1.;
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case SQR:
-                o1 = st.top(); st.pop();
-                stackCount--;
+                o1 = stack[--SP];
+
                 tmp = (o1 >= 0.) ? sqrt(o1) : 1;
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case SIN:
-                o1 = st.top(); st.pop();
-                stackCount--;
+                o1 = stack[--SP];
+
                 tmp = sin(o1);
-                st.push(tmp);
-                stackCount++;
+
+                stack[SP++] = tmp;
                 break;
             case ERR:
                 return -1.;
             default:
                 tmp = input[solution[i]];
-                st.push(tmp);
-                stackCount++;
-                cout << "pushed " << tmp << endl;
+
+                stack[SP++] = tmp;
                 break;
         }
     }
-    cout << "st.size():\t" << st.size() << "\tstackcount:\t" << stackCount<<endl;
-    return st.top();
+
+    cerr << "SP:\t" << SP << endl;
+    double result = stack[--SP];
+
+    delete[] stack;
+
+    return result;
 }
 
 
@@ -264,12 +269,12 @@ int main() {
 
     cout << "valid length:\t" << getValidLength(individual) << endl;
 
-    vector<uint> test1  = {0, 1, MUL, 1, 0, SIN, DIV, ADD};
+    vector<uint> test1 = {0, 1, MUL, 1, 0, SIN, DIV, ADD};
     vector<double> input = {3., 5.};
 
-    cout<< "valid:\t" << getValidLength(test1) << endl;
+    cout << "valid:\t" << getValidLength(test1) << endl;
     double eval = evaluate(test1, input);
-    cout << "eval:\t" << eval << endl;
+    cout << "eval:\t" << eval << "\ttrue:\t50.4308" << endl;
 
 
     return 0;
