@@ -260,22 +260,34 @@ double evaluate(vector<uint> &solution, vector<double> &input) {
 }
 
 
-int main() {
-    srand((unsigned) time(nullptr));
-
+void test1() {
     vector<uint> individual = generateIndividual(10);
 
     printSolution(individual);
 
     cout << "valid length:\t" << getValidLength(individual) << endl;
+}
 
-    vector<uint> test1 = {0, 1, MUL, 1, 0, SIN, DIV, ADD};
+
+void test2() {
+    vector<uint> test = {0, 1, MUL, 1, 0, SIN, DIV, ADD};
     vector<double> input = {3., 5.};
 
-    cout << "valid:\t" << getValidLength(test1) << endl;
-    double eval = evaluate(test1, input);
+    cout << "valid:\t" << getValidLength(test) << endl;
+    double eval = evaluate(test, input);
     cout << "eval:\t" << eval << "\ttrue:\t50.4308" << endl;
+}
 
+
+void test3() {
+
+}
+
+
+int main() {
+    srand((unsigned) time(nullptr));
+
+    test2();
 
     return 0;
 }
