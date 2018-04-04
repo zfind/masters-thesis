@@ -335,14 +335,82 @@ void evaluateHost(vector<uint> &program, vector<vector<double>> &input, vector<d
 }
 
 
-__global__ void evaluateParallel(uint *d_program, double *d_input, double *d_output, double* d_stack, int N, int prog_size){
+__global__ void evaluateParallel(uint *d_program, double *d_input, double *d_output, double* d_stack, int N, int DIM, int prog_size){
     int tid = blockIdx.x;
 
-    double* t_stack = d_stack + tid * prog_size;
+    double* stack = d_stack + tid * prog_size;
 
-    for (int i=0; i<prog_size; i++) {
-        t_stack[i] = (double) i;
+    double* input = d_input + tid * DIM;
+
+//    for (int i=0; i<prog_size; i++) {
+//        t_stack[i] = (double) i;
+//    }
+
+    int SP = 0;
+
+    double o1, o2, tmp;
+
+    for (int i = 0; i < prog_size; i++) {
+        switch (d_program[i]) {
+            case ADD:
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
+                tmp = o1 + o2;
+
+                stack[SP++] = tmp;
+                break;
+            case SUB:
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
+                tmp = o1 - o2;
+
+                stack[SP++] = tmp;
+                break;
+            case MUL:
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
+                tmp = o1 * o2;
+
+                stack[SP++] = tmp;
+                break;
+            case DIV:
+                o2 = stack[--SP];
+                o1 = stack[--SP];
+
+                tmp = (abs(o2) > 10E-9) ? o1 / o2 : 1.;
+
+                stack[SP++] = tmp;
+                break;
+            case SQR:
+                o1 = stack[--SP];
+
+                tmp = (o1 >= 0.) ? sqrt(o1) : 1;
+
+                stack[SP++] = tmp;
+                break;
+            case SIN:
+                o1 = stack[--SP];
+
+                tmp = sin(o1);
+
+                stack[SP++] = tmp;
+                break;
+            default:
+                tmp = input[d_program[i]];
+
+                stack[SP++] = tmp;
+                break;
+        }
     }
+
+//    cerr << "SP:\t" << SP << endl;
+    double result = stack[--SP];
+
+    d_output[tid] = result;
+
 }
 
 
@@ -371,17 +439,26 @@ void evaluateDevice(vector<uint> &program, vector<vector<double>> &input, vector
 
     dim3 dimGridN(N, 1);
     dim3 dimBlock(1,1,1);
-    evaluateParallel<<<dimGridN, dimBlock>>>(d_program, d_input, d_output, d_stack, N, program.size());
+    evaluateParallel<<<dimGridN, dimBlock>>>(d_program, d_input, d_output, d_stack, N, DIM, program.size());
     cudaDeviceSynchronize();
 
-    double *h_stack = new double[N * program.size()];
-    cudaMemcpy(h_stack, d_stack, N * program.size() * sizeof(double), cudaMemcpyDeviceToHost);
+//    double *h_stack = new double[N * program.size()];
+//    cudaMemcpy(h_stack, d_stack, N * program.size() * sizeof(double), cudaMemcpyDeviceToHost);
 
-    for (int i = 0; i < N * program.size(); i++) {
-        cout << h_stack[i] << endl;
+//    for (int i = 0; i < N * program.size(); i++) {
+//        cout << h_stack[i] << endl;
+//    }
+
+//    delete[] h_stack;
+
+    double *h_output = new double[N];
+    cudaMemcpy(h_output, d_output, N * sizeof(double), cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < N; i++) {
+        cout << h_output[i] << endl;
     }
 
-    delete[] h_stack;
+    delete[] h_output;
 
     cudaFree(d_stack);
     cudaFree(d_program);
