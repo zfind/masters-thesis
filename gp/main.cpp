@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <ctime>
 #include <cmath>
+#include <fstream>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 
 using namespace std;
 
@@ -188,7 +191,7 @@ int getValidLength(vector<uint> &solution) {
 double evaluate(vector<uint> &solution, vector<double> &input) {
     int validLength = getValidLength(solution);
 
-    double* stack = new double[validLength];
+    double *stack = new double[validLength];
     int SP = 0;
 
     double o1, o2, tmp;
@@ -251,7 +254,7 @@ double evaluate(vector<uint> &solution, vector<double> &input) {
         }
     }
 
-    cerr << "SP:\t" << SP << endl;
+//    cerr << "SP:\t" << SP << endl;
     double result = stack[--SP];
 
     delete[] stack;
@@ -280,14 +283,175 @@ void test2() {
 
 
 void test3() {
+    vector<double> input = {0.1, 5.1, -2.3, 7.7, -1.33};
 
+    vector<uint> s1 = {0, 1, SUB, 2, ADD, 4, 3, 4, ADD, DIV, MUL};
+    double o1 = evaluate(s1, input);
+    cout << "eval:\t" << o1 << "\treal:\t" << 1.5241758 << endl;
+
+    vector<uint> s2 = {0, SIN, 0, 2, MUL, SUB, 1, SQR, 3, DIV, MUL, 4, SIN, 2, SQR, DIV, ADD};
+    double o2 = evaluate(s2, input);
+    cout << "eval:\t" << o2 << "\treal:\t" << -0.8744121795 << endl;
+
+    vector<uint> s3 = {0, SIN, 1, SQR, MUL, 1, 0, SUB, 2, 3, ADD, DIV, ADD, 4, SIN, 3, ADD, 4, SQR, 1, SIN, 3, SQR, ADD,
+                       DIV, MUL, SUB};
+    double o3 = evaluate(s3, input);
+    cout << "eval:\t" << o3 << "\treal:\t" << -2.48766 << endl;
+}
+
+
+void loadInput(string filename, vector<vector<double>> &matrix) {
+    ifstream in(filename);
+
+    if (!in) {
+        cerr << "Cannot open file.\n";
+        exit(-1);
+    }
+
+    int N, DIM;
+    in >> N;
+    in >> DIM;
+
+    vector<double> initRow;
+    initRow.resize(DIM, 0.);
+    matrix.resize(N, initRow);
+
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < DIM; x++) {
+            in >> matrix[y][x];
+        }
+    }
+
+    in.close();
+}
+
+
+void evaluateHost(vector<uint> &program, vector<vector<double>> &input, vector<double> &result) {
+    int N = input.size();
+    result.resize(N, 0.);
+    for (int i = 0; i < N; i++) {
+        result[i] = evaluate(program, input[i]);
+    }
+}
+
+
+__global__ void evaluateParallel(uint *d_program, double *d_input, double *d_output, double* d_stack, int N, int prog_size){
+    int tid = blockIdx.x;
+
+    double* t_stack = d_stack + tid * prog_size;
+
+    for (int i=0; i<prog_size; i++) {
+        t_stack[i] = (double) i;
+    }
+}
+
+
+void evaluateDevice(vector<uint> &program, vector<vector<double>> &input, vector<double> &result){
+    int N = input.size();
+    int DIM = input[0].size();
+
+    double* h_input = new double[N*DIM];
+    double * p_input = h_input;
+    for (int i=0; i<N; i++) {
+        copy(input[i].begin(), input[i].end(), p_input);
+        p_input += DIM;
+    }
+
+    double *d_input, *d_output;
+    cudaMalloc((void **) &d_input, N * DIM * sizeof(double));
+    cudaMalloc((void **) &d_output, N * sizeof(double));
+    uint *d_program;
+    cudaMalloc((void **) &d_program, program.size() * sizeof(uint));
+
+    cudaMemcpy(d_input, h_input, N * DIM * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_program, &program[0], program.size() * sizeof(uint), cudaMemcpyHostToDevice);
+
+    double *d_stack;
+    cudaMalloc((void **) &d_stack, N * program.size() * sizeof(double));
+
+    dim3 dimGridN(N, 1);
+    dim3 dimBlock(1,1,1);
+    evaluateParallel<<<dimGridN, dimBlock>>>(d_program, d_input, d_output, d_stack, N, program.size());
+    cudaDeviceSynchronize();
+
+    double *h_stack = new double[N * program.size()];
+    cudaMemcpy(h_stack, d_stack, N * program.size() * sizeof(double), cudaMemcpyDeviceToHost);
+
+    for (int i = 0; i < N * program.size(); i++) {
+        cout << h_stack[i] << endl;
+    }
+
+    delete[] h_stack;
+
+    cudaFree(d_stack);
+    cudaFree(d_program);
+    cudaFree(d_input);
+    cudaFree(d_output);
+    delete[] h_input;
+}
+
+
+__global__ void myKernel(double *d_stack, int size) {
+    int tid = blockIdx.x;
+
+    double* t_stack = d_stack + tid * size;
+
+    for (int i=0; i<size; i++) {
+        t_stack[i] = (double) i;
+    }
+}
+
+void stackDraft() {
+    int N = 5;
+    int size = 10;
+
+    double *d_stack;
+    cudaMalloc((void **) &d_stack, N * size * sizeof(double));
+
+    dim3 dimGridN(N, 1);
+    dim3 dimBlock(1,1,1);
+
+    myKernel<<<dimGridN, dimBlock>>>(d_stack, size);
+    cudaDeviceSynchronize();
+
+    double* h_stack = new double[N*size];
+    cudaMemcpy(h_stack, d_stack, N * size * sizeof(double), cudaMemcpyDeviceToHost);
+
+
+    for (int i = 0; i < N * size; i++) {
+        cout << h_stack[i] << endl;
+    }
+
+    delete[] h_stack;
+    cudaFree(d_stack);
+}
+
+void test4() {
+    vector<vector<double>> matrix;
+    loadInput("/home/zac/Projekti/masters-thesis/gp/input.txt", matrix);
+
+    vector<double> result;
+    vector<uint> program = {0, SIN, 1, SQR, MUL, 1, 0, SUB, 2, 3, ADD, DIV, ADD, 4, SIN, 3, ADD, 4, SQR, 1, SIN, 3, SQR, ADD, DIV, MUL, SUB};
+    evaluateHost(program, matrix, result);
+
+    for (int i = 0; i < result.size(); i++) {
+        cout << result[i] << endl;
+    }
+
+    evaluateDevice(program, matrix, result);
+
+    return;
+}
+
+void test5() {
+    stackDraft();
 }
 
 
 int main() {
     srand((unsigned) time(nullptr));
 
-    test2();
+    test4();
 
     return 0;
 }
