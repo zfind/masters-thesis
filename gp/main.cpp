@@ -335,12 +335,13 @@ void evaluateHost(vector<uint> &program, vector<vector<double>> &input, vector<d
 }
 
 
-__global__ void evaluateParallel(uint *d_program, double *d_input, double *d_output, double* d_stack, int N, int DIM, int prog_size){
+__global__ void
+evaluateParallel(uint *d_program, double *d_input, double *d_output, double *d_stack, int N, int DIM, int prog_size) {
     int tid = blockIdx.x;
 
-    double* stack = d_stack + tid * prog_size;
+    double *stack = d_stack + tid * prog_size;
 
-    double* input = d_input + tid * DIM;
+    double *input = d_input + tid * DIM;
 
 //    for (int i=0; i<prog_size; i++) {
 //        t_stack[i] = (double) i;
@@ -414,66 +415,60 @@ __global__ void evaluateParallel(uint *d_program, double *d_input, double *d_out
 }
 
 
-void evaluateDevice(vector<uint> &program, vector<vector<double>> &input, vector<double> &result){
+void evaluateDevice(vector<uint> &program, vector<vector<double>> &input, vector<double> &result) {
     int N = input.size();
     int DIM = input[0].size();
+    int PROG_SIZE = program.size();
 
-    double* h_input = new double[N*DIM];
-    double * p_input = h_input;
-    for (int i=0; i<N; i++) {
+    //  copy input matrix to 1D array
+    double *h_input = new double[N * DIM];
+    double *p_input = h_input;
+    for (int i = 0; i < N; i++) {
         copy(input[i].begin(), input[i].end(), p_input);
         p_input += DIM;
     }
 
-    double *d_input, *d_output;
-    cudaMalloc((void **) &d_input, N * DIM * sizeof(double));
-    cudaMalloc((void **) &d_output, N * sizeof(double));
     uint *d_program;
-    cudaMalloc((void **) &d_program, program.size() * sizeof(uint));
-
-    cudaMemcpy(d_input, h_input, N * DIM * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMalloc((void **) &d_program, PROG_SIZE * sizeof(uint));
     cudaMemcpy(d_program, &program[0], program.size() * sizeof(uint), cudaMemcpyHostToDevice);
 
+    double *d_input;
+    cudaMalloc((void **) &d_input, N * DIM * sizeof(double));
+    cudaMemcpy(d_input, h_input, N * DIM * sizeof(double), cudaMemcpyHostToDevice);
+
+    double *d_output;
+    cudaMalloc((void **) &d_output, N * sizeof(double));
+
     double *d_stack;
-    cudaMalloc((void **) &d_stack, N * program.size() * sizeof(double));
+    cudaMalloc((void **) &d_stack, N * PROG_SIZE * sizeof(double));
 
     dim3 dimGridN(N, 1);
-    dim3 dimBlock(1,1,1);
+    dim3 dimBlock(1, 1, 1);
     evaluateParallel<<<dimGridN, dimBlock>>>(d_program, d_input, d_output, d_stack, N, DIM, program.size());
     cudaDeviceSynchronize();
 
-//    double *h_stack = new double[N * program.size()];
-//    cudaMemcpy(h_stack, d_stack, N * program.size() * sizeof(double), cudaMemcpyDeviceToHost);
-
-//    for (int i = 0; i < N * program.size(); i++) {
-//        cout << h_stack[i] << endl;
-//    }
-
-//    delete[] h_stack;
-
     double *h_output = new double[N];
     cudaMemcpy(h_output, d_output, N * sizeof(double), cudaMemcpyDeviceToHost);
-
     for (int i = 0; i < N; i++) {
         cout << h_output[i] << endl;
     }
-
     delete[] h_output;
 
     cudaFree(d_stack);
+
+    delete[] h_input;
     cudaFree(d_program);
     cudaFree(d_input);
     cudaFree(d_output);
-    delete[] h_input;
 }
 
 
 __global__ void myKernel(double *d_stack, int size) {
     int tid = blockIdx.x;
 
-    double* t_stack = d_stack + tid * size;
+    double *t_stack = d_stack + tid * size;
 
-    for (int i=0; i<size; i++) {
+    for (int i = 0; i < size; i++) {
         t_stack[i] = (double) i;
     }
 }
@@ -486,12 +481,12 @@ void stackDraft() {
     cudaMalloc((void **) &d_stack, N * size * sizeof(double));
 
     dim3 dimGridN(N, 1);
-    dim3 dimBlock(1,1,1);
+    dim3 dimBlock(1, 1, 1);
 
-    myKernel<<<dimGridN, dimBlock>>>(d_stack, size);
+    myKernel << < dimGridN, dimBlock >> > (d_stack, size);
     cudaDeviceSynchronize();
 
-    double* h_stack = new double[N*size];
+    double *h_stack = new double[N * size];
     cudaMemcpy(h_stack, d_stack, N * size * sizeof(double), cudaMemcpyDeviceToHost);
 
 
@@ -508,7 +503,8 @@ void test4() {
     loadInput("/home/zac/Projekti/masters-thesis/gp/input.txt", matrix);
 
     vector<double> result;
-    vector<uint> program = {0, SIN, 1, SQR, MUL, 1, 0, SUB, 2, 3, ADD, DIV, ADD, 4, SIN, 3, ADD, 4, SQR, 1, SIN, 3, SQR, ADD, DIV, MUL, SUB};
+    vector<uint> program = {0, SIN, 1, SQR, MUL, 1, 0, SUB, 2, 3, ADD, DIV, ADD, 4, SIN, 3, ADD, 4, SQR, 1, SIN, 3, SQR,
+                            ADD, DIV, MUL, SUB};
     evaluateHost(program, matrix, result);
 
     for (int i = 0; i < result.size(); i++) {
