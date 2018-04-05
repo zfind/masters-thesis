@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
+#include <chrono>
 
 using namespace std;
 
@@ -329,9 +330,13 @@ void loadInput(string filename, vector<vector<double>> &matrix) {
 void evaluateHost(vector<uint> &program, vector<vector<double>> &input, vector<double> &result) {
     int N = input.size();
     result.resize(N, 0.);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < N; i++) {
         result[i] = evaluate(program, input[i]);
     }
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+    std::cout << "Time difference [us] = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() <<std::endl;
 }
 
 
@@ -444,14 +449,21 @@ void evaluateDevice(vector<uint> &program, vector<vector<double>> &input, vector
 
     dim3 dimGridN(N, 1);
     dim3 dimBlock(1, 1, 1);
+
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     evaluateParallel<<<dimGridN, dimBlock>>>(d_program, d_input, d_output, d_stack, N, DIM, program.size());
     cudaDeviceSynchronize();
 
     double *h_output = new double[N];
     cudaMemcpy(h_output, d_output, N * sizeof(double), cudaMemcpyDeviceToHost);
-    for (int i = 0; i < N; i++) {
-        cout << h_output[i] << endl;
-    }
+
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+    std::cout << "Time difference [us] = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() <<std::endl;
+
+//    for (int i = 0; i < N; i++) {
+//        cout << h_output[i] << endl;
+//    }
     delete[] h_output;
 
     cudaFree(d_stack);
@@ -500,16 +512,16 @@ void stackDraft() {
 
 void test4() {
     vector<vector<double>> matrix;
-    loadInput("/home/zac/Projekti/masters-thesis/gp/input.txt", matrix);
+    loadInput("/home/zac/Projekti/masters-thesis/gp/big.txt", matrix);
 
     vector<double> result;
     vector<uint> program = {0, SIN, 1, SQR, MUL, 1, 0, SUB, 2, 3, ADD, DIV, ADD, 4, SIN, 3, ADD, 4, SQR, 1, SIN, 3, SQR,
                             ADD, DIV, MUL, SUB};
     evaluateHost(program, matrix, result);
 
-    for (int i = 0; i < result.size(); i++) {
-        cout << result[i] << endl;
-    }
+//    for (int i = 0; i < result.size(); i++) {
+//        cout << result[i] << endl;
+//    }
 
     evaluateDevice(program, matrix, result);
 
