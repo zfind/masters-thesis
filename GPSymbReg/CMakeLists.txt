@@ -16,16 +16,6 @@ set(SOURCE_FILES
     SymbRegEvalOp.cpp
     SymbRegEvalOp.h)
 
-#include_directories(/usr/local/include)
 add_executable(GPSymbReg ${SOURCE_FILES})
 
 target_link_libraries(GPSymbReg ecf)
-
-
-#
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#    target_link_libraries(GPSymbReg ${CMAKE_CURRENT_SOURCE_DIR}/../../debug/libECF.a)
-#endif()
-#if(CMAKE_BUILD_TYPE STREQUAL "Release")
-#    target_link_libraries(GPSymbReg ${CMAKE_CURRENT_SOURCE_DIR}/../../release/libECF.a)
-#endif()
