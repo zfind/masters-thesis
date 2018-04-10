@@ -30,6 +30,7 @@ public:
 	FitnessP evaluate(IndividualP individual);
 	bool initialize(StateP);
 	std::vector<double> domain;
+	std::vector<std::vector<double>> datasetInput;
 	std::vector<double> codomain;
 	uint nSamples;
 };
