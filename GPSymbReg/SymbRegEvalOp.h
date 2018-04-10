@@ -33,6 +33,13 @@ public:
 	std::vector<std::vector<double>> datasetInput;
 	std::vector<double> codomain;
 	uint nSamples;
+private:
+    void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
+    void h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
+                           std::vector<vector<double>> &input, std::vector<double> &result);
+    double h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst, std::vector<double> &input,
+                           int validLength);
+    void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
 };
 typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
 

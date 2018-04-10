@@ -23,13 +23,9 @@
 
 #define ERR 0xFFFFFFFF
 
-#define OPERAND 0
-#define UNARY   1
-#define BINARY  2
 
-void printSolution(vector<uint> &solution, vector<double> &solutionConst) {
+void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst) {
     for (uint i = 0; i < solution.size(); i++) {
-//        cerr << i << ": ";
         switch (solution[i]) {
             case ADD:
                 cerr << "+ ";
@@ -80,8 +76,8 @@ void printSolution(vector<uint> &solution, vector<double> &solutionConst) {
 }
 
 
-double evaluate1(vector<uint> &solution, vector<double> &solutionConst, vector<double> &input, int validLength) {
-//    int validLength = getValidLength(solution);
+double SymbRegEvalOp::h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst,
+                                      std::vector<double> &input, int validLength) {
 
     double *stack = new double[validLength];
     int SP = 0;
@@ -147,7 +143,6 @@ double evaluate1(vector<uint> &solution, vector<double> &solutionConst, vector<d
                 tmp = input[0];
 
                 stack[SP++] = tmp;
-//                cerr << "st:\t" << stack[SP-1] << endl;
                 break;
             case VAR_X1:
                 tmp = input[1];
@@ -173,7 +168,6 @@ double evaluate1(vector<uint> &solution, vector<double> &solutionConst, vector<d
                 tmp = solutionConst[i];
 
                 stack[SP++] = tmp;
-//                cerr << "st:\t" << stack[SP-1] << endl;
                 break;
             case ERR:
             default:
@@ -182,23 +176,22 @@ double evaluate1(vector<uint> &solution, vector<double> &solutionConst, vector<d
         }
     }
 
-//    cerr << "SP:\t" << SP << endl;
     double result = stack[--SP];
 
     delete[] stack;
 
-//    cerr << result << endl;
     return result;
 }
 
 
-void evaluateHost(vector<uint> &program, vector<double> &programConst, vector<vector<double>> &input, vector<double> &result) {
+void SymbRegEvalOp::h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
+                                      std::vector<vector<double>> &input, std::vector<double> &result) {
     int N = input.size();
     result.resize(N, 0.);
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < N; i++) {
-        result[i] = evaluate1(program, programConst, input[i], program.size());
+        result[i] = h_evaluatePoint(program, programConst, input[i], program.size());
     }
 //    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 //    std::cerr << "CPU Time difference [us] = "
@@ -219,14 +212,15 @@ bool SymbRegEvalOp::initialize(StateP state) {
         x += 2;
     }
 
-    for (int i = 0; i < nSamples; i++) {
-        cerr << i << ":\t" << datasetInput[i][0] << endl;
-    }
+//    for (int i = 0; i < nSamples; i++) {
+//        cerr << i << ":\t" << datasetInput[i][0] << endl;
+//    }
+
     return true;
 }
 
 
-void convertToPostfix(IndividualP individual, vector<uint> &solution, vector<double> &solutionConstants) {
+void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants) {
     cerr << "=====================================================" << endl;
 
     uint nTreeSize, nTree;
@@ -332,6 +326,10 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     vector<double> postfixConstants;
     convertToPostfix(individual, postfix, postfixConstants);
 
+    vector<double> resvec;
+    h_evaluateDataset(postfix, postfixConstants, datasetInput, resvec);
+
+
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
 
@@ -340,9 +338,6 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     // (you can also use boost smart pointers:)
     //TreeP tree = boost::static_pointer_cast<Tree::Tree> (individual->getGenotype());
 
-    vector<double> resvec;
-    evaluateHost(postfix, postfixConstants, datasetInput, resvec);
-
     double value = 0;
     for (uint i = 0; i < nSamples; i++) {
         // for each test data instance, the x value (domain) must be set
@@ -350,10 +345,9 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         // get the y value of the current tree
         double result;
         tree->execute(&result);
-        double myresult;
-//        myresult = evaluate1(postfix, postfixConstants, datasetInput[i], postfix.size());
         // add the difference
         value += fabs(codomain[i] - result);
+
         cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\thost:\t" << resvec[i] << endl;
     }
     fitness->setValue(value);
