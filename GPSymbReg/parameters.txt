@@ -9,7 +9,7 @@
         <Tree>
             <Entry desc="" key="functionset">sin cos + - / *</Entry>
             <Entry desc="" key="maxdepth">4</Entry>
-            <Entry desc="" key="terminalset">1 X [-1 1]</Entry>
+            <Entry desc="" key="terminalset">1 X X1 X2 X3 X4 [-1 1]</Entry>
         </Tree>
     </Genotype>
     <Registry>

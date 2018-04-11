@@ -170,18 +170,24 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
 
 // called only once, before the evolution  generates training data
 bool SymbRegEvalOp::initialize(StateP state) {
-    nSamples = 10;
-    double x = -10;
-    for (uint i = 0; i < nSamples; i++) {
-        vector<double> tmp;
-        tmp.push_back(x);
-        datasetInput.push_back(tmp);
-        domain.push_back(x);
-        codomain.push_back(x + sin(x));
-        x += 2;
-    }
+//    nSamples = 10;
+//    double x = -10;
+//    for (uint i = 0; i < nSamples; i++) {
+//        vector<double> tmp;
+//        tmp.push_back(x);
+//        datasetInput.push_back(tmp);
+//        domain.push_back(x);
+//        codomain.push_back(x + sin(x));
+//        x += 2;
+//    }
 
-    evaluator = new CudaEvaluator(nSamples, 1, 100, datasetInput, codomain);
+
+    loadFromFile("/home/zac/Projekti/masters-thesis/GPSymbReg/input.txt", datasetInput, codomain);
+
+    nSamples = datasetInput.size();
+    int DIM = datasetInput[0].size();
+
+    evaluator = new CudaEvaluator(nSamples, DIM, 100, datasetInput, codomain);
 
     convTime = 0;
     ecfTime = 0;
@@ -244,7 +250,12 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     double value = 0;
     for (uint i = 0; i < nSamples; i++) {
         // for each test data instance, the x value (domain) must be set
-        tree->setTerminalValue("X", &domain[i]);
+//        tree->setTerminalValue("X", &domain[i]);
+        tree->setTerminalValue("X", &datasetInput[i][0]);
+        tree->setTerminalValue("X1", &datasetInput[i][1]);
+        tree->setTerminalValue("X2", &datasetInput[i][2]);
+        tree->setTerminalValue("X3", &datasetInput[i][3]);
+        tree->setTerminalValue("X4", &datasetInput[i][4]);
         // get the y value of the current tree
         double result;
         tree->execute(&result);
@@ -273,6 +284,36 @@ SymbRegEvalOp::~SymbRegEvalOp() {
     cerr << "CPU time:\t" << cpuTime << endl;
     cerr << "GPU time:\t" << gpuTime << endl;
     cerr << "Conv time:\t" << convTime << endl;
+}
+
+void SymbRegEvalOp::loadFromFile(std::string filename, std::vector<std::vector<double>> &matrix, std::vector<double> &output) {
+    ifstream in(filename);
+
+    if (!in) {
+        cerr << "Cannot open file.\n";
+        exit(-1);
+    }
+
+    int N, DIM;
+    in >> N;
+    in >> DIM;
+
+    vector<double> initRow;
+    initRow.resize(DIM, 0.);
+    matrix.resize(N, initRow);
+
+    for (int y = 0; y < N; y++) {
+        for (int x = 0; x < DIM; x++) {
+            in >> matrix[y][x];
+        }
+    }
+
+    output.resize(N);
+    for (int i = 0; i < N; i++) {
+        in >> output[i];
+    }
+
+    in.close();
 }
 
 

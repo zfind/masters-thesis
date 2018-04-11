@@ -37,6 +37,7 @@ public:
     std::vector<double> codomain;
     uint nSamples;
 
+    void loadFromFile(std::string filename, std::vector<std::vector<double>> &matrix, std::vector<double> &output);
     std::vector<std::vector<double>> datasetInput;
     void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
     void convertToPostfix(IndividualP individual,
