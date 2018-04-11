@@ -183,6 +183,7 @@ bool SymbRegEvalOp::initialize(StateP state) {
 
     evaluator = new CudaEvaluator(nSamples, 1, 100, datasetInput, codomain);
 
+    convTime = 0;
     ecfTime = 0;
     cpuTime = 0;
     gpuTime = 0;
@@ -210,6 +211,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
     //  vrijeme pretvorbe
     long postfixConversionTime = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+    convTime += postfixConversionTime;
 
     //  evaluiraj
 //    evaluator->evaluate(postfix, postfixConstants);
@@ -254,7 +256,13 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     ecfTime += diff;
 
-//    cerr << "real:\t" << value << endl;
+    if (fabs(h_fitness - d_fitness) > 1E-10) {     // std::numeric_limits<double>::epsilon()
+        cerr << "FAIL\t" << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
+    }
+    if (fabs(value - h_fitness)> 1E-10) {
+        cerr << "FAIL\t" << "real:\t" << value << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
+    }
+
 
     return fitness;
 }
@@ -264,6 +272,7 @@ SymbRegEvalOp::~SymbRegEvalOp() {
     cerr << "ECF time:\t" << ecfTime << endl;
     cerr << "CPU time:\t" << cpuTime << endl;
     cerr << "GPU time:\t" << gpuTime << endl;
+    cerr << "Conv time:\t" << convTime << endl;
 }
 
 

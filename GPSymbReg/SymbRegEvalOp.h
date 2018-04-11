@@ -43,7 +43,7 @@ public:
                           std::vector<uint> &solution, std::vector<double> &solutionConstants);
     CudaEvaluator *evaluator;
 
-    long ecfTime, cpuTime, gpuTime;
+    long convTime, ecfTime, cpuTime, gpuTime;
 
     ~SymbRegEvalOp();
 
