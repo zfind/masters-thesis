@@ -181,7 +181,6 @@ bool SymbRegEvalOp::initialize(StateP state) {
         x += 2;
     }
 
-
     evaluator = new CudaEvaluator(nSamples, 1, 100, datasetInput, codomain);
 
     ecfTime = 0;

@@ -53,7 +53,7 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    evaluateParallel << < dimGridN, dimBlock >> > (d_program, d_programConst,
+    d_evaluateIndividual << < dimGridN, dimBlock >> > (d_program, d_programConst,
             d_input, d_output, d_stack,
             N, DIM, program.size());
     cudaDeviceSynchronize();
@@ -74,12 +74,12 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
     return fitness;
 }
 
-__global__ void evaluateParallel(uint *d_program,
-                                 double *d_programConstant,
-                                 double *d_input,
-                                 double *d_output,
-                                 double *d_stack,
-                                 int N, int DIM, int prog_size) {
+__global__ void d_evaluateIndividual(uint *d_program,
+                                     double *d_programConstant,
+                                     double *d_input,
+                                     double *d_output,
+                                     double *d_stack,
+                                     int N, int DIM, int prog_size) {
     int tid = blockIdx.x;
 
     double *stack = d_stack + tid * prog_size;
@@ -189,8 +189,8 @@ __global__ void evaluateParallel(uint *d_program,
 }
 
 
-double CudaEvaluator::h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst,
-                                      std::vector<double> &input, int validLength) {
+double CudaEvaluator::h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
+                                           std::vector<double> &input, int validLength) {
 
     double *stack = new double[validLength];
     int SP = 0;
@@ -306,7 +306,7 @@ double CudaEvaluator::h_evaluate(std::vector<uint> &program, std::vector<double>
     double fitness = 0.;
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < N; i++) {
-        result[i] = h_evaluatePoint(program, programConst, input[i], program.size());
+        result[i] = h_evaluateIndividual(program, programConst, input[i], program.size());
         fitness += fabs(real[i] - result[i]);
     }
 //    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

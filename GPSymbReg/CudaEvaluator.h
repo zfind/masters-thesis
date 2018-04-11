@@ -35,14 +35,9 @@ public:
 
 
 private:
-//    void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
-
-
-
-    double h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst, std::vector<double> &input,
-                           int validLength);
-
-//    void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
+    double h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
+                                std::vector<double> &input,
+                                int validLength);
 
 private:
     int N;
@@ -57,14 +52,16 @@ private:
     double *d_input;
     double *d_output;
     double *d_stack;
+
 };
 
-__global__ void evaluateParallel(uint *d_program,
-                                 double *d_programConstant,
-                                 double *d_input,
-                                 double *d_output,
-                                 double *d_stack,
-                                 int N, int DIM, int prog_size);
+
+__global__ void d_evaluateIndividual(uint *d_program,
+                                     double *d_programConstant,
+                                     double *d_input,
+                                     double *d_output,
+                                     double *d_stack,
+                                     int N, int DIM, int prog_size);
 
 
 #endif //GPSYMBREG_CUDAEVALUATOR_H

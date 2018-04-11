@@ -39,8 +39,8 @@ public:
 
     std::vector<std::vector<double>> datasetInput;
     void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
-    void convertToPostfix(IndividualP individual, std::vector<uint> &solution,
-                                         std::vector<double> &solutionConstants);
+    void convertToPostfix(IndividualP individual,
+                          std::vector<uint> &solution, std::vector<double> &solutionConstants);
     CudaEvaluator *evaluator;
 
     long ecfTime, cpuTime, gpuTime;
