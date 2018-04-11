@@ -184,6 +184,10 @@ bool SymbRegEvalOp::initialize(StateP state) {
 
     evaluator = new CudaEvaluator(nSamples, 1, 100, datasetInput, codomain);
 
+    ecfTime = 0;
+    cpuTime = 0;
+    gpuTime = 0;
+
     return true;
 }
 
@@ -195,14 +199,37 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     //  preciznost ispisa decimalnih brojeva
     cerr.precision(std::numeric_limits<double>::max_digits10);
 
+    std::chrono::steady_clock::time_point begin, end;
+    long diff;
+
+    begin = std::chrono::steady_clock::now();
     //  pretvori u postfix
     vector<uint> postfix;
     vector<double> postfixConstants;
     convertToPostfix(individual, postfix, postfixConstants);
+    end = std::chrono::steady_clock::now();
+
+    //  vrijeme pretvorbe
+    long postfixConversionTime = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
     //  evaluiraj
-    evaluator->evaluate(postfix, postfixConstants);
+//    evaluator->evaluate(postfix, postfixConstants);
 
+    // evaluiraj na cpu
+    begin = std::chrono::steady_clock::now();
+    vector<double> h_result;
+    double h_fitness = evaluator->h_evaluate(postfix, postfixConstants, datasetInput, codomain, h_result);
+    end = std::chrono::steady_clock::now();
+    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+    cpuTime += postfixConversionTime + diff;
+
+    // evaluiraj na gpu
+    begin = std::chrono::steady_clock::now();
+    vector<double> d_result;
+    double d_fitness = evaluator->d_evaluate(postfix, postfixConstants, datasetInput, codomain, d_result);
+    end = std::chrono::steady_clock::now();
+    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+    gpuTime += postfixConversionTime + diff;
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
@@ -212,6 +239,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     // (you can also use boost smart pointers:)
     //TreeP tree = boost::static_pointer_cast<Tree::Tree> (individual->getGenotype());
 
+    begin = std::chrono::steady_clock::now();
     double value = 0;
     for (uint i = 0; i < nSamples; i++) {
         // for each test data instance, the x value (domain) must be set
@@ -223,14 +251,20 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         value += fabs(codomain[i] - result);
     }
     fitness->setValue(value);
+    end = std::chrono::steady_clock::now();
+    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+    ecfTime += diff;
 
-    cerr << "real:\t" << value << endl;
+//    cerr << "real:\t" << value << endl;
 
     return fitness;
 }
 
 SymbRegEvalOp::~SymbRegEvalOp() {
     delete evaluator;
+    cerr << "ECF time:\t" << ecfTime << endl;
+    cerr << "CPU time:\t" << cpuTime << endl;
+    cerr << "GPU time:\t" << gpuTime << endl;
 }
 
 

@@ -1,0 +1,25 @@
+#ifndef GPSYMBREG_CONSTANTS_H
+#define GPSYMBREG_CONSTANTS_H
+
+
+#define VAR_X0   0x00000000
+#define VAR_X1   0x00000001
+#define VAR_X2   0x00000002
+#define VAR_X3   0x00000003
+#define VAR_X4   0x00000004
+
+#define CONST   0x0000000FF
+
+#define ADD 0xFFFFFFF0
+#define SUB 0xFFFFFFF1
+#define MUL 0xFFFFFFF2
+#define DIV 0xFFFFFFF3
+
+#define SQR 0xFFFFFFF4
+#define SIN 0xFFFFFFF5
+#define COS 0xFFFFFFF6
+
+#define ERR 0xFFFFFFFF
+
+
+#endif //GPSYMBREG_CONSTANTS_H

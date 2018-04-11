@@ -297,9 +297,9 @@ double CudaEvaluator::h_evaluatePoint(std::vector<uint> &solution, std::vector<d
 }
 
 
-double CudaEvaluator::h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
-                                      std::vector<vector<double>> &input, vector<double>& real,
-                                      std::vector<double> &result) {
+double CudaEvaluator::h_evaluate(std::vector<uint> &program, std::vector<double> &programConst,
+                                 std::vector<vector<double>> &input, vector<double> &real,
+                                 std::vector<double> &result) {
 //    int N = input.size();
     result.resize(N, 0.);
 
@@ -320,7 +320,7 @@ void CudaEvaluator::evaluate(vector<uint> &postfix, vector<double> &postfixConst
 
     // evaluiraj na cpu
     vector<double> h_result;
-    double h_fitness = h_evaluateDataset(postfix, postfixConstants, datasetInput, datasetOutput, h_result);
+    double h_fitness = h_evaluate(postfix, postfixConstants, datasetInput, datasetOutput, h_result);
 
     // evaluiraj na gpu
     vector<double> d_result;

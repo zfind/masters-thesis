@@ -23,6 +23,10 @@ public:
 
     ~CudaEvaluator();
 
+    double h_evaluate(std::vector<uint> &program, std::vector<double> &programConst,
+                      std::vector<vector<double>> &input, vector<double> &real,
+                      std::vector<double> &result);
+
     double d_evaluate(vector<uint> &program, vector<double> &programConst,
                     vector<vector<double>> &input, vector<double> &real,
                     vector<double> &result);
@@ -33,9 +37,7 @@ public:
 private:
 //    void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
 
-    double h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
-                           std::vector<vector<double>> &input, vector<double>& real,
-                           std::vector<double> &result);
+
 
     double h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst, std::vector<double> &input,
                            int validLength);

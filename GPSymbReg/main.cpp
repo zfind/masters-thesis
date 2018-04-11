@@ -5,11 +5,16 @@ int main(int argc, char **argv)
 {
 	StateP state (new State);
 
+    SymbRegEvalOp* symbRegEvalOp = new SymbRegEvalOp;
+
 	// set the evaluation operator
-	state->setEvalOp(new SymbRegEvalOp);
+	state->setEvalOp(symbRegEvalOp);
 
 	state->initialize(argc, argv);
 	state->run();
+
+
+    delete symbRegEvalOp;
 
 	return 0;
 }
