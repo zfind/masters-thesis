@@ -3,6 +3,7 @@
 #include <stack>
 #include "SymbRegEvalOp.h"
 #include <chrono>
+#include <limits>
 
 #define VAR_X0   0x00000000
 #define VAR_X1   0x00000001
@@ -216,6 +217,8 @@ bool SymbRegEvalOp::initialize(StateP state) {
 //        cerr << i << ":\t" << datasetInput[i][0] << endl;
 //    }
 
+    evaluator = new CudaEvaluator(nSamples, 1, 100, datasetInput);
+
     return true;
 }
 
@@ -322,6 +325,7 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
 
 FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
+    cerr.precision(std::numeric_limits< double >::max_digits10);
     vector<uint> postfix;
     vector<double> postfixConstants;
     convertToPostfix(individual, postfix, postfixConstants);
@@ -330,7 +334,8 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     h_evaluateDataset(postfix, postfixConstants, datasetInput, resvec);
 
     vector<double> d_result;
-    evaluateDevice(postfix, postfixConstants, datasetInput, d_result);
+//    evaluateDevice(postfix, postfixConstants, datasetInput, d_result);
+    evaluator->evaluate(postfix, postfixConstants, datasetInput, d_result);
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
@@ -350,9 +355,22 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         // add the difference
         value += fabs(codomain[i] - result);
 
-        cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\thost:\t" << d_result[i] << endl;
+//        if(fabs(result - d_result[i]) < std::numeric_limits<double>::epsilon()) {
+            if(fabs(result - d_result[i]) > std::numeric_limits<double>::epsilon()) {
+
+                cerr  <<"FAIL:\t" << endl;
+            cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\tdev:\t" << d_result[i] << endl;
+        }
+//        cerr << ((fabs(result - d_result[i]) < 1E-9) ? "OK!" : "FAIL") << endl;
+//        cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\thost:\t" << d_result[i] << endl;
     }
     fitness->setValue(value);
 
     return fitness;
 }
+
+SymbRegEvalOp::~SymbRegEvalOp() {
+    delete evaluator;
+}
+
+

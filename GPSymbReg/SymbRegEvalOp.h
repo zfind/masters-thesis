@@ -18,8 +18,11 @@
  * - min and max tree depth
  *
  */
- 
- 
+
+
+#include "CudaEvaluator.h"
+//extern "CudaEvaluator.h"
+
 /**
  * \ingroup symbreg
  * \brief Symbolic regression evaluation operator.
@@ -33,6 +36,11 @@ public:
 	std::vector<std::vector<double>> datasetInput;
 	std::vector<double> codomain;
 	uint nSamples;
+
+    CudaEvaluator* evaluator;
+
+	~SymbRegEvalOp();
+
 private:
     void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
     void h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
@@ -43,10 +51,10 @@ private:
 };
 typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
 
-extern "C"
-void evaluateDevice(vector<uint> &program, vector<double> &programConst, vector<vector<double>> &input, vector<double> &result);
-
-extern "C"
-void stackDraft();
+//extern "C"
+//void evaluateDevice(vector<uint> &program, vector<double> &programConst, vector<vector<double>> &input, vector<double> &result);
+//
+//extern "C"
+//void stackDraft();
 
 #endif // SymbRegEvalOp_h
