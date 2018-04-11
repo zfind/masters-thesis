@@ -1,28 +1,11 @@
 #include <cmath>
 #include <ecf/ECF.h>
 #include <stack>
-#include "SymbRegEvalOp.h"
 #include <chrono>
 #include <limits>
 
-#define VAR_X0   0x00000000
-#define VAR_X1   0x00000001
-#define VAR_X2   0x00000002
-#define VAR_X3   0x00000003
-#define VAR_X4   0x00000004
-
-#define CONST   0x0000000FF
-
-#define ADD 0xFFFFFFF0
-#define SUB 0xFFFFFFF1
-#define MUL 0xFFFFFFF2
-#define DIV 0xFFFFFFF3
-
-#define SQR 0xFFFFFFF4
-#define SIN 0xFFFFFFF5
-#define COS 0xFFFFFFF6
-
-#define ERR 0xFFFFFFFF
+#include "SymbRegEvalOp.h"
+#include "Constants.h"
 
 
 void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst) {
@@ -172,7 +155,7 @@ double SymbRegEvalOp::h_evaluatePoint(std::vector<uint> &solution, std::vector<d
                 break;
             case ERR:
             default:
-                cerr<< "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl;
+                cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl;
                 return -1.;
         }
     }
@@ -223,7 +206,8 @@ bool SymbRegEvalOp::initialize(StateP state) {
 }
 
 
-void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants) {
+void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &solution,
+                                     std::vector<double> &solutionConstants) {
     cerr << "=====================================================" << endl;
 
     uint nTreeSize, nTree;
@@ -325,7 +309,7 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
 
 FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
-    cerr.precision(std::numeric_limits< double >::max_digits10);
+    cerr.precision(std::numeric_limits<double>::max_digits10);
     vector<uint> postfix;
     vector<double> postfixConstants;
     convertToPostfix(individual, postfix, postfixConstants);
@@ -356,9 +340,9 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         value += fabs(codomain[i] - result);
 
 //        if(fabs(result - d_result[i]) < std::numeric_limits<double>::epsilon()) {
-            if(fabs(result - d_result[i]) > std::numeric_limits<double>::epsilon()) {
+        if (fabs(result - d_result[i]) > std::numeric_limits<double>::epsilon()) {
 
-                cerr  <<"FAIL:\t" << endl;
+            cerr << "FAIL:\t" << endl;
             cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\tdev:\t" << d_result[i] << endl;
         }
 //        cerr << ((fabs(result - d_result[i]) < 1E-9) ? "OK!" : "FAIL") << endl;

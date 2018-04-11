@@ -21,40 +21,40 @@
 
 
 #include "CudaEvaluator.h"
-//extern "CudaEvaluator.h"
+
 
 /**
  * \ingroup symbreg
  * \brief Symbolic regression evaluation operator.
  */
-class SymbRegEvalOp : public EvaluateOp
-{
+class SymbRegEvalOp : public EvaluateOp {
 public:
-	FitnessP evaluate(IndividualP individual);
-	bool initialize(StateP);
-	std::vector<double> domain;
-	std::vector<std::vector<double>> datasetInput;
-	std::vector<double> codomain;
-	uint nSamples;
+    FitnessP evaluate(IndividualP individual);
 
-    CudaEvaluator* evaluator;
+    bool initialize(StateP);
 
-	~SymbRegEvalOp();
+    std::vector<double> domain;
+    std::vector<double> codomain;
+    uint nSamples;
+
+    std::vector<std::vector<double>> datasetInput;
+    CudaEvaluator *evaluator;
+
+    ~SymbRegEvalOp();
 
 private:
     void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
+
     void h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
                            std::vector<vector<double>> &input, std::vector<double> &result);
+
     double h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst, std::vector<double> &input,
                            int validLength);
+
     void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
 };
+
 typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
 
-//extern "C"
-//void evaluateDevice(vector<uint> &program, vector<double> &programConst, vector<vector<double>> &input, vector<double> &result);
-//
-//extern "C"
-//void stackDraft();
 
 #endif // SymbRegEvalOp_h
