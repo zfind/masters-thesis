@@ -43,4 +43,10 @@ private:
 };
 typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
 
+extern "C"
+void evaluateDevice(vector<uint> &program, vector<double> &programConst, vector<vector<double>> &input, vector<double> &result);
+
+extern "C"
+void stackDraft();
+
 #endif // SymbRegEvalOp_h

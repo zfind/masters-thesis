@@ -329,6 +329,8 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     vector<double> resvec;
     h_evaluateDataset(postfix, postfixConstants, datasetInput, resvec);
 
+    vector<double> d_result;
+    evaluateDevice(postfix, postfixConstants, datasetInput, d_result);
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
@@ -348,7 +350,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         // add the difference
         value += fabs(codomain[i] - result);
 
-        cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\thost:\t" << resvec[i] << endl;
+        cerr << "real:\t" << codomain[i] << "\tcurr:\t" << result << "\thost:\t" << d_result[i] << endl;
     }
     fitness->setValue(value);
 
