@@ -20,6 +20,7 @@ set(SOURCE_FILES
         main.cpp
         SymbRegEvalOp.cpp
         SymbRegEvalOp.h
+        Constants.h
         CudaEvaluator.h)
 
 cuda_add_library(CudaEvaluator_o CudaEvaluator.cu)

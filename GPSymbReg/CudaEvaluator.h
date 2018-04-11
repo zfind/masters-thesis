@@ -18,18 +18,37 @@ using namespace std;
 
 class CudaEvaluator {
 public:
-    CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<double>> &input);
+    CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE,
+                  vector<vector<double>> &input, vector<double>& datasetOutput);
 
     ~CudaEvaluator();
 
-    void evaluate(vector<uint> &program, vector<double> &programConst,
-                  vector<vector<double>> &input,
-                  vector<double> &result);
+    double d_evaluate(vector<uint> &program, vector<double> &programConst,
+                    vector<vector<double>> &input, vector<double> &real,
+                    vector<double> &result);
+
+    void evaluate(std::vector<uint> &solution, std::vector<double> &solutionConstants);
+
+
+private:
+//    void convertToPostfix(IndividualP individual, std::vector<uint> &solution, std::vector<double> &solutionConstants);
+
+    double h_evaluateDataset(std::vector<uint> &program, std::vector<double> &programConst,
+                           std::vector<vector<double>> &input, vector<double>& real,
+                           std::vector<double> &result);
+
+    double h_evaluatePoint(std::vector<uint> &solution, std::vector<double> &solutionConst, std::vector<double> &input,
+                           int validLength);
+
+//    void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
 
 private:
     int N;
     int DIM;
     int MAX_PROG_SIZE;
+
+    std::vector<std::vector<double>> datasetInput;
+    std::vector<double> datasetOutput;
 
     uint *d_program;
     double *d_programConst;
