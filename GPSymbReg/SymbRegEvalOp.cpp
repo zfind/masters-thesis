@@ -35,7 +35,7 @@ void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<doubl
             case COS:
                 cerr << "cos ";
                 break;
-            case VAR_X0:
+            case VAR:
                 cerr << "X ";
                 break;
             case VAR_X1:
@@ -122,28 +122,22 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
         vector<double> tmpd(result.size());
         for (int i = 0; i < result.size(); i++) {
             string pName = (*pTree)[result[i]]->primitive_->getName();
-            if (pName == "+") {
+            if (pName[0] == '+') {
                 tmp.push_back(ADD);
-            } else if (pName == "-") {
+            } else if (pName[0] == '-') {
                 tmp.push_back(SUB);
-            } else if (pName == "*") {
+            } else if (pName[0] == '*') {
                 tmp.push_back(MUL);
-            } else if (pName == "/") {
+            } else if (pName[0] == '/') {
                 tmp.push_back(DIV);
-            } else if (pName == "sin") {
+            } else if (pName[0] == 's') {
                 tmp.push_back(SIN);
-            } else if (pName == "cos") {
+            } else if (pName[0] == 'c') {
                 tmp.push_back(COS);
-            } else if (pName == "X") {
-                tmp.push_back(VAR_X0);
-            } else if (pName == "X1") {
-                tmp.push_back(VAR_X1);
-            } else if (pName == "X2") {
-                tmp.push_back(VAR_X2);
-            } else if (pName == "X3") {
-                tmp.push_back(VAR_X3);
-            } else if (pName == "X4") {
-                tmp.push_back(VAR_X4);
+            } else if (pName[0] == 'X') {
+                string xx = pName.substr(1);
+                uint idx = VAR + stoi(xx);
+                tmp.push_back(idx);
             } else if (pName == "1") {
                 tmp.push_back(CONST);
                 tmpd[i] = 1.;
@@ -251,7 +245,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     for (uint i = 0; i < nSamples; i++) {
         // for each test data instance, the x value (domain) must be set
 //        tree->setTerminalValue("X", &domain[i]);
-        tree->setTerminalValue("X", &datasetInput[i][0]);
+        tree->setTerminalValue("X0", &datasetInput[i][0]);
         tree->setTerminalValue("X1", &datasetInput[i][1]);
         tree->setTerminalValue("X2", &datasetInput[i][2]);
         tree->setTerminalValue("X3", &datasetInput[i][3]);

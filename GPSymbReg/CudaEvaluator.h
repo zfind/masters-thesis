@@ -19,7 +19,7 @@ using namespace std;
 class CudaEvaluator {
 public:
     CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE,
-                  vector<vector<double>> &input, vector<double>& datasetOutput);
+                  vector<vector<double>> &input, vector<double> &datasetOutput);
 
     ~CudaEvaluator();
 
@@ -28,13 +28,14 @@ public:
                       std::vector<double> &result);
 
     double d_evaluate(vector<uint> &program, vector<double> &programConst,
-                    vector<vector<double>> &input, vector<double> &real,
-                    vector<double> &result);
+                      vector<vector<double>> &input, vector<double> &real,
+                      vector<double> &result);
 
     void evaluate(std::vector<uint> &solution, std::vector<double> &solutionConstants);
 
 
 private:
+
     double h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
                                 std::vector<double> &input,
                                 int validLength);

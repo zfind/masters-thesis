@@ -8,7 +8,10 @@
 #include "Constants.h"
 
 
-CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<double>> &input, vector<double>& output) :
+#define EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
+
+
+CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<double>> &input, vector<double> &output) :
         N(N), DIM(DIM), MAX_PROG_SIZE(MAX_PROG_SIZE), datasetInput(input), datasetOutput(output) {
     cudaMalloc((void **) &d_program, MAX_PROG_SIZE * sizeof(uint));
     cudaMalloc((void **) &d_programConst, MAX_PROG_SIZE * sizeof(double));
@@ -39,8 +42,8 @@ CudaEvaluator::~CudaEvaluator() {
 }
 
 double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programConst,
-                               vector<vector<double>> &input, vector<double>& real,
-                               vector<double> &result) {
+                                 vector<vector<double>> &input, vector<double> &real,
+                                 vector<double> &result) {
 
 
     int PROG_SIZE = program.size();
@@ -188,110 +191,70 @@ __global__ void d_evaluateIndividual(uint *d_program,
     d_output[tid] = result;
 }
 
-
 double CudaEvaluator::h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
                                            std::vector<double> &input, int validLength) {
-
-    double *stack = new double[validLength];
+    double stack[validLength];
     int SP = 0;
 
     double o1, o2, tmp;
 
     for (int i = 0; i < validLength; i++) {
-        switch (solution[i]) {
-            case ADD:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+        if (solution[i] >= ARR_2) {
+            o2 = stack[--SP];
+            o1 = stack[--SP];
 
-                tmp = o1 + o2;
+            switch (solution[i]) {
+                case ADD:
+                    tmp = o1 + o2;
+                    break;
+                case SUB:
+                    tmp = o1 - o2;
+                    break;
+                case MUL:
+                    tmp = o1 * o2;
+                    break;
+                case DIV:
+                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                    break;
+                default:
+                    EVALUATE_ERROR
+            }
 
-                stack[SP++] = tmp;
-                break;
-            case SUB:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
 
-                tmp = o1 - o2;
+        } else if (solution[i] >= ARR_1) {
+            o1 = stack[--SP];
 
-                stack[SP++] = tmp;
-                break;
-            case MUL:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+            switch (solution[i]) {
+                case SQR:
+                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                    break;
+                case SIN:
+                    tmp = sin(o1);
+                    break;
+                case COS:
+                    tmp = cos(o1);
+                    break;
+                default:
+                    EVALUATE_ERROR
+            }
 
-                tmp = o1 * o2;
 
-                stack[SP++] = tmp;
-                break;
-            case DIV:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+        } else if (solution[i] == CONST) {
+            tmp = solutionConst[i];
 
-                tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+        } else if (solution[i] >= VAR && solution[i] < CONST) {
+            uint code = solution[i];
+            uint idx = code - VAR;
+            tmp = input[idx];
 
-                stack[SP++] = tmp;
-                break;
-            case SQR:
-                o1 = stack[--SP];
-
-                tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
-
-                stack[SP++] = tmp;
-                break;
-            case SIN:
-                o1 = stack[--SP];
-
-                tmp = sin(o1);
-
-                stack[SP++] = tmp;
-                break;
-            case COS:
-                o1 = stack[--SP];
-
-                tmp = cos(o1);
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X0:
-                tmp = input[0];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X1:
-                tmp = input[1];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X2:
-                tmp = input[2];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X3:
-                tmp = input[3];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X4:
-                tmp = input[4];
-
-                stack[SP++] = tmp;
-                break;
-            case CONST:
-                tmp = solutionConst[i];
-
-                stack[SP++] = tmp;
-                break;
-            case ERR:
-            default:
-                cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl;
-                return -1.;
+        } else {
+            EVALUATE_ERROR
         }
+
+        stack[SP++] = tmp;
     }
 
     double result = stack[--SP];
-
-    delete[] stack;
 
     return result;
 }
@@ -324,7 +287,7 @@ void CudaEvaluator::evaluate(vector<uint> &postfix, vector<double> &postfixConst
 
     // evaluiraj na gpu
     vector<double> d_result;
-    double d_fitness = d_evaluate(postfix, postfixConstants, datasetInput,datasetOutput, d_result);
+    double d_fitness = d_evaluate(postfix, postfixConstants, datasetInput, datasetOutput, d_result);
 
     // provjeri jesu li jednaki
 //    for (int i = 0; i < h_result.size(); i++) {
