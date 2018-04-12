@@ -2,6 +2,9 @@
 #define GPSYMBREG_CONSTANTS_H
 
 
+#define DOUBLE_EQUALS 1E-7
+
+
 #define ARR_V   0x00000000
 #define VAR     0x00000000
 

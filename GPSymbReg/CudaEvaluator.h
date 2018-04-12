@@ -56,7 +56,6 @@ private:
 
 };
 
-
 __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_programConstant,
                                      double *d_input,

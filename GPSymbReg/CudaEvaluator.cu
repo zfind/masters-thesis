@@ -9,6 +9,7 @@
 
 
 #define EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
+#define GPU_EVALUATE_ERROR do {d_output[tid] = NAN; return;} while(0);
 
 
 CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<double>> &input, vector<double> &output) :
@@ -56,7 +57,7 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    d_evaluateIndividual << < dimGridN, dimBlock >> > (d_program, d_programConst,
+    d_evaluateIndividual <<< dimGridN, dimBlock >>> (d_program, d_programConst,
             d_input, d_output, d_stack,
             N, DIM, program.size());
     cudaDeviceSynchronize();
@@ -77,6 +78,7 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
     return fitness;
 }
 
+
 __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_programConstant,
                                      double *d_input,
@@ -95,101 +97,66 @@ __global__ void d_evaluateIndividual(uint *d_program,
     double o1, o2, tmp;
 
     for (int i = 0; i < prog_size; i++) {
-        switch (d_program[i]) {
-            case ADD:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+        if (d_program[i] >= ARR_2) {
+            o2 = stack[--SP];
+            o1 = stack[--SP];
 
-                tmp = o1 + o2;
+            switch (d_program[i]) {
+                case ADD:
+                    tmp = o1 + o2;
+                    break;
+                case SUB:
+                    tmp = o1 - o2;
+                    break;
+                case MUL:
+                    tmp = o1 * o2;
+                    break;
+                case DIV:
+                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                    break;
+                default:
+                    GPU_EVALUATE_ERROR
+            }
 
-                stack[SP++] = tmp;
-                break;
-            case SUB:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
 
-                tmp = o1 - o2;
+        } else if (d_program[i] >= ARR_1) {
+            o1 = stack[--SP];
 
-                stack[SP++] = tmp;
-                break;
-            case MUL:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+            switch (d_program[i]) {
+                case SQR:
+                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                    break;
+                case SIN:
+                    tmp = sin(o1);
+                    break;
+                case COS:
+                    tmp = cos(o1);
+                    break;
+                default:
+                    GPU_EVALUATE_ERROR
+            }
 
-                tmp = o1 * o2;
 
-                stack[SP++] = tmp;
-                break;
-            case DIV:
-                o2 = stack[--SP];
-                o1 = stack[--SP];
+        } else if (d_program[i] == CONST) {
+            tmp = d_programConstant[i];
 
-                tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+        } else if (d_program[i] >= VAR && d_program[i] < CONST) {
+            uint code = d_program[i];
+            uint idx = code - VAR;
+            tmp = input[idx];
 
-                stack[SP++] = tmp;
-                break;
-            case SQR:
-                o1 = stack[--SP];
-
-                tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
-
-                stack[SP++] = tmp;
-                break;
-            case SIN:
-                o1 = stack[--SP];
-
-                tmp = sin(o1);
-
-                stack[SP++] = tmp;
-                break;
-            case COS:
-                o1 = stack[--SP];
-
-                tmp = cos(o1);
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X0:
-                tmp = input[0];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X1:
-                tmp = input[1];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X2:
-                tmp = input[2];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X3:
-                tmp = input[3];
-
-                stack[SP++] = tmp;
-                break;
-            case VAR_X4:
-                tmp = input[4];
-
-                stack[SP++] = tmp;
-                break;
-            case CONST:
-                tmp = d_programConstant[i];
-
-                stack[SP++] = tmp;
-                break;
-            case ERR:
-            default:
-                d_output[tid] = -1;
-                return;
+        } else {
+            GPU_EVALUATE_ERROR
         }
+
+        stack[SP++] = tmp;
     }
 
     double result = stack[--SP];
 
     d_output[tid] = result;
 }
+
 
 double CudaEvaluator::h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
                                            std::vector<double> &input, int validLength) {

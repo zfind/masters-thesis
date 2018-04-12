@@ -261,10 +261,10 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     ecfTime += diff;
 
-    if (fabs(h_fitness - d_fitness) > 1E-10) {     // std::numeric_limits<double>::epsilon()
+    if (fabs(h_fitness - d_fitness) > DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
         cerr << "FAIL\t" << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
     }
-    if (fabs(value - h_fitness)> 1E-10) {
+    if (fabs(value - h_fitness)> DOUBLE_EQUALS) {
         cerr << "FAIL\t" << "real:\t" << value << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
     }
 
