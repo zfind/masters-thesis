@@ -85,7 +85,6 @@ __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_output,
                                      double *d_stack,
                                      int N, int DIM, int prog_size) {
-//    int tid = blockIdx.x;
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 

@@ -63,8 +63,6 @@ void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<doubl
 }
 
 
-
-
 void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &solution,
                                      std::vector<double> &solutionConstants) {
     DBG(cerr << "=====================================================" << endl;)
@@ -110,12 +108,14 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
 
         vector<int> result = st.top();
 
+
         //  postfix ispis
-        DBG(for (int i = 0; i < result.size(); i++) {
-            string pName = (*pTree)[result[i]]->primitive_->getName();
-            cerr << pName << " ";
-        }
-        cerr << endl;)
+        DBG(
+                for (int i = 0; i < result.size(); i++) {
+                    string pName = (*pTree)[result[i]]->primitive_->getName();
+                    cerr << pName << " ";
+                }
+                cerr << endl;)
 
 
         vector<uint> tmp;
@@ -161,7 +161,6 @@ void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &
 }
 
 
-
 // called only once, before the evolution  generates training data
 bool SymbRegEvalOp::initialize(StateP state) {
 //    nSamples = 10;
@@ -190,8 +189,6 @@ bool SymbRegEvalOp::initialize(StateP state) {
 
     return true;
 }
-
-
 
 
 FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
@@ -264,7 +261,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     if (fabs(h_fitness - d_fitness) > DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
         cerr << "FAIL\t" << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
     }
-    if (fabs(value - h_fitness)> DOUBLE_EQUALS) {
+    if (fabs(value - d_fitness) > DOUBLE_EQUALS) {
         cerr << "FAIL\t" << "real:\t" << value << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
     }
 
@@ -274,13 +271,20 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
 SymbRegEvalOp::~SymbRegEvalOp() {
     delete evaluator;
+
+    cerr.precision(7);
+    cerr << "===== STATS =====" << endl;
     cerr << "ECF time:\t" << ecfTime << endl;
     cerr << "CPU time:\t" << cpuTime << endl;
     cerr << "GPU time:\t" << gpuTime << endl;
     cerr << "Conv time:\t" << convTime << endl;
+    cerr << "CPU speedup:\t" << (double) ecfTime / cpuTime << endl;
+    cerr << "GPU speedup:\t" << (double) ecfTime / gpuTime << endl;
 }
 
-void SymbRegEvalOp::loadFromFile(std::string filename, std::vector<std::vector<double>> &matrix, std::vector<double> &output) {
+void SymbRegEvalOp::loadFromFile(std::string filename,
+                                 std::vector<std::vector<double>> &matrix,
+                                 std::vector<double> &output) {
     ifstream in(filename);
 
     if (!in) {
