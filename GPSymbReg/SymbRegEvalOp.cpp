@@ -62,6 +62,128 @@ void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<doubl
     cerr << endl;
 }
 
+void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem, uint& PROG_SIZE, uint& MEM_SIZE) {
+    DBG(cerr << "=====================================================" << endl;)
+
+    uint nTreeSize, nTree;
+    uint nTrees = (uint) individual->size();
+    for (nTree = 0; nTree < nTrees; nTree++) {
+        TreeP pTree = boost::dynamic_pointer_cast<Tree::Tree>(individual->getGenotype(nTree));
+        nTreeSize = (uint) pTree->size();
+
+        //  prefix ispis
+        DBG(
+                for (int i = 0; i < nTreeSize; i++) {
+                    string primName = (*pTree)[i]->primitive_->getName();
+                    cerr << primName << " ";
+                }
+                cerr << endl;)
+
+        //  pretvori u postfix
+        stack<vector<int>> st;
+        int length = nTreeSize;
+        for (int i = length - 1; i >= 0; i--) {
+            int arity = (*pTree)[i]->primitive_->getNumberOfArguments();
+            if (arity == 2) {
+                vector<int> op1 = st.top();
+                st.pop();
+                vector<int> op2 = st.top();
+                st.pop();
+                op1.insert(op1.end(), op2.begin(), op2.end());
+                op1.push_back(i);
+                st.push(op1);
+            } else if (arity == 1) {
+                vector<int> op1 = st.top();
+                st.pop();
+                op1.push_back(i);
+                st.push(op1);
+            } else {
+                vector<int> tmp;
+                tmp.push_back(i);
+                st.push(tmp);
+            }
+        }
+
+        vector<int> result = st.top();
+
+
+        //  postfix ispis
+        DBG(
+                for (int i = 0; i < result.size(); i++) {
+                    string pName = (*pTree)[result[i]]->primitive_->getName();
+                    cerr << pName << " ";
+                }
+                cerr << endl;)
+
+
+        vector<uint> tmp;
+        vector<double> tmpd(result.size());
+
+        PROG_SIZE = result.size();
+        uint* prog = (uint*) postfixMem;
+        double* progConst = (double*) &prog[PROG_SIZE];
+
+        for (int i = 0; i < result.size(); i++) {
+            string pName = (*pTree)[result[i]]->primitive_->getName();
+            if (pName[0] == '+') {
+//                tmp.push_back(ADD);
+                *prog = ADD;
+                prog++;
+            } else if (pName[0] == '-') {
+//                tmp.push_back(SUB);
+                *prog = SUB;
+                prog++;
+            } else if (pName[0] == '*') {
+//                tmp.push_back(MUL);
+                *prog = MUL;
+                prog++;
+            } else if (pName[0] == '/') {
+//                tmp.push_back(DIV);
+                *prog = DIV;
+                prog++;
+            } else if (pName[0] == 's') {
+//                tmp.push_back(SIN);
+                *prog = SIN;
+                prog++;
+            } else if (pName[0] == 'c') {
+//                tmp.push_back(COS);
+                *prog = COS;
+                prog++;
+            } else if (pName[0] == 'X') {
+                string xx = pName.substr(1);
+                uint idx = VAR + stoi(xx);
+//                tmp.push_back(idx);
+                *prog = idx;
+                prog++;
+            } else if (pName == "1") {
+//                tmp.push_back(CONST);
+                *prog = CONST;
+                prog++;
+//                tmpd[i] = 1.;
+                *progConst = 1.;
+                progConst++;
+            } else if (pName[0] == 'D' && pName[1] == '_') {
+//                tmp.push_back(CONST);
+                *prog = CONST;
+                prog++;
+                double value;
+                (*pTree)[result[i]]->primitive_->getValue(&value);
+//                tmpd[i] = value;
+                *progConst = value;
+                progConst++;
+            } else {
+                cerr << pName << endl;
+            }
+        }
+
+//        DBG(printSolution(tmp, tmpd);)
+        MEM_SIZE = (char*) progConst - postfixMem;
+//        cerr << "orig velicina:\t" << PROG_SIZE << "\tpostfix velicina:\t" << MEM_SIZE/ sizeof(uint) << endl;
+    }
+
+    DBG(cerr << "*******************************************************" << endl;)
+}
+
 
 void SymbRegEvalOp::convertToPostfix(IndividualP individual, std::vector<uint> &solution,
                                      std::vector<double> &solutionConstants) {
@@ -174,6 +296,7 @@ bool SymbRegEvalOp::initialize(StateP state) {
 //        x += 2;
 //    }
 
+    postfixMem = new char[4*1000];
 
     loadFromFile("/home/zac/Projekti/masters-thesis/GPSymbReg/input.txt", datasetInput, codomain);
 
@@ -206,6 +329,12 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     convertToPostfix(individual, postfix, postfixConstants);
     end = std::chrono::steady_clock::now();
 
+    begin = std::chrono::steady_clock::now();
+    //  pretvori u postfix
+    uint PROG_SIZE, MEM_SIZE;
+    convertToPostfixNew(individual, postfixMem, PROG_SIZE, MEM_SIZE);
+    end = std::chrono::steady_clock::now();
+
     //  vrijeme pretvorbe
     long postfixConversionTime = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     convTime += postfixConversionTime;
@@ -216,7 +345,8 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     // evaluiraj na cpu
     begin = std::chrono::steady_clock::now();
     vector<double> h_result;
-    double h_fitness = evaluator->h_evaluate(postfix, postfixConstants, datasetInput, codomain, h_result);
+//    double h_fitness = evaluator->h_evaluate(postfix, postfixConstants, datasetInput, codomain, h_result);
+    double h_fitness = evaluator->h_evaluateNew(postfixMem, PROG_SIZE, MEM_SIZE, h_result);
     end = std::chrono::steady_clock::now();
     diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     cpuTime += postfixConversionTime + diff;
@@ -270,6 +400,8 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 }
 
 SymbRegEvalOp::~SymbRegEvalOp() {
+    delete postfixMem;
+
     delete evaluator;
 
     cerr.precision(7);

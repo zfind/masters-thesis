@@ -27,6 +27,8 @@ public:
                       std::vector<vector<double>> &input, vector<double> &real,
                       std::vector<double> &result);
 
+    double h_evaluateNew(char* postfixMem, uint PROG_SIZE, uint MEM_SIZE, std::vector<double> &result);
+
     double d_evaluate(vector<uint> &program, vector<double> &programConst,
                       vector<vector<double>> &input, vector<double> &real,
                       vector<double> &result);
@@ -39,6 +41,9 @@ private:
     double h_evaluateIndividual(std::vector<uint> &solution, std::vector<double> &solutionConst,
                                 std::vector<double> &input,
                                 int validLength);
+
+    double h_evaluateIndividualNew(char* postfixMem, uint PROG_SIZE, uint MEM_SIZE,
+                                   std::vector<double> &input);
 
 private:
     int N;

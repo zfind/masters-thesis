@@ -235,6 +235,79 @@ double CudaEvaluator::h_evaluateIndividual(std::vector<uint> &solution, std::vec
     return result;
 }
 
+double CudaEvaluator::h_evaluateIndividualNew(char* postfixMem, uint PROG_SIZE, uint MEM_SIZE,
+                                              std::vector<double> &input) {
+
+    uint* program = (uint*) postfixMem;
+    double* programConst = (double*) &program[PROG_SIZE];
+
+    double stack[PROG_SIZE];
+    int SP = 0;
+
+    double o1, o2, tmp;
+
+    for (int i = 0; i < PROG_SIZE; i++) {
+        if (program[i] >= ARR_2) {
+            o2 = stack[--SP];
+            o1 = stack[--SP];
+
+            switch (program[i]) {
+                case ADD:
+                    tmp = o1 + o2;
+                    break;
+                case SUB:
+                    tmp = o1 - o2;
+                    break;
+                case MUL:
+                    tmp = o1 * o2;
+                    break;
+                case DIV:
+                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                    break;
+                default:
+                    EVALUATE_ERROR
+            }
+
+
+        } else if (program[i] >= ARR_1) {
+            o1 = stack[--SP];
+
+            switch (program[i]) {
+                case SQR:
+                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                    break;
+                case SIN:
+                    tmp = sin(o1);
+                    break;
+                case COS:
+                    tmp = cos(o1);
+                    break;
+                default:
+                    EVALUATE_ERROR
+            }
+
+
+        } else if (program[i] == CONST) {
+            tmp = *programConst;
+            programConst++;
+
+        } else if (program[i] >= VAR && program[i] < CONST) {
+            uint code = program[i];
+            uint idx = code - VAR;
+            tmp = input[idx];
+
+        } else {
+            EVALUATE_ERROR
+        }
+
+        stack[SP++] = tmp;
+    }
+
+    double result = stack[--SP];
+
+    return result;
+}
+
 
 double CudaEvaluator::h_evaluate(std::vector<uint> &program, std::vector<double> &programConst,
                                  std::vector<vector<double>> &input, vector<double> &real,
@@ -247,6 +320,22 @@ double CudaEvaluator::h_evaluate(std::vector<uint> &program, std::vector<double>
     for (int i = 0; i < N; i++) {
         result[i] = h_evaluateIndividual(program, programConst, input[i], program.size());
         fitness += fabs(real[i] - result[i]);
+    }
+//    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+//    std::cerr << "CPU Time difference [us] = "
+//              << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << std::endl;
+    return fitness;
+}
+
+double CudaEvaluator::h_evaluateNew(char* postfixMem, uint PROG_SIZE, uint MEM_SIZE, std::vector<double> &result) {
+//    int N = input.size();
+    result.resize(N, 0.);
+
+    double fitness = 0.;
+//    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    for (int i = 0; i < N; i++) {
+        result[i] = h_evaluateIndividualNew(postfixMem, PROG_SIZE, MEM_SIZE, datasetInput[i]);
+        fitness += fabs(datasetOutput[i] - result[i]);
     }
 //    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 //    std::cerr << "CPU Time difference [us] = "
