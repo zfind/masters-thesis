@@ -52,12 +52,12 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
     cudaMemcpy(d_program, &program[0], program.size() * sizeof(uint), cudaMemcpyHostToDevice);
     cudaMemcpy(d_programConst, &programConst[0], program.size() * sizeof(double), cudaMemcpyHostToDevice);
 
-    dim3 dimGridN(N, 1);
-    dim3 dimBlock(1, 1, 1);
+    dim3 block(128, 1);
+    dim3 grid((N + block.x - 1) / block.x, 1);
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    d_evaluateIndividual <<< dimGridN, dimBlock >>> (d_program, d_programConst,
+    d_evaluateIndividual<<<grid, block>>>(d_program, d_programConst,
             d_input, d_output, d_stack,
             N, DIM, program.size());
     cudaDeviceSynchronize();
@@ -85,7 +85,11 @@ __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_output,
                                      double *d_stack,
                                      int N, int DIM, int prog_size) {
-    int tid = blockIdx.x;
+//    int tid = blockIdx.x;
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid >= N) return;
 
     double *stack = d_stack + tid * prog_size;
 
