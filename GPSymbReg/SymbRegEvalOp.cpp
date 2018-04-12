@@ -259,10 +259,10 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     ecfTime += diff;
 
     if (fabs(h_fitness - d_fitness) > DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
-        cerr << "FAIL\t" << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
+        cerr << "FAIL\t" << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << "\tdiff:\t" << fabs(h_fitness-d_fitness)<< endl;
     }
     if (fabs(value - d_fitness) > DOUBLE_EQUALS) {
-        cerr << "FAIL\t" << "real:\t" << value << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
+        cerr << "FAIL\t" << "real:\t" << value << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << "\tdiff:\t" << fabs(value-d_fitness)<< endl;
     }
 
 
@@ -277,9 +277,10 @@ SymbRegEvalOp::~SymbRegEvalOp() {
     cerr << "ECF time:\t" << ecfTime << endl;
     cerr << "CPU time:\t" << cpuTime << endl;
     cerr << "GPU time:\t" << gpuTime << endl;
-    cerr << "Conv time:\t" << convTime << endl;
-    cerr << "CPU speedup:\t" << (double) ecfTime / cpuTime << endl;
-    cerr << "GPU speedup:\t" << (double) ecfTime / gpuTime << endl;
+    cerr << "Conversion time:\t" << convTime << endl;
+    cerr << "CPU vs ECF:\t" << (double) ecfTime / cpuTime << endl;
+    cerr << "GPU vs CPU:\t" << (double) cpuTime / gpuTime << endl;
+    cerr << "GPU vs ECF:\t" << (double) ecfTime / gpuTime << endl;
 }
 
 void SymbRegEvalOp::loadFromFile(std::string filename,

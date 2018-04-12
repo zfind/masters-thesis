@@ -54,10 +54,11 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
     dim3 block(128, 1);
     dim3 grid((N + block.x - 1) / block.x, 1);
+    size_t shared_size = block.x * program.size() * sizeof(double);
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    d_evaluateIndividual<<<grid, block>>>(d_program, d_programConst,
+    d_evaluateIndividual<<<grid, block, shared_size>>>(d_program, d_programConst,
             d_input, d_output, d_stack,
             N, DIM, program.size());
     cudaDeviceSynchronize();
@@ -90,7 +91,12 @@ __global__ void d_evaluateIndividual(uint *d_program,
 
     if (tid >= N) return;
 
-    double *stack = d_stack + tid * prog_size;
+//    double *stack = d_stack + tid * prog_size;
+
+//    double stack[50];
+
+    extern __shared__ double stackChunk[];
+    double *stack = stackChunk + threadIdx.x * prog_size;
 
     double *input = d_input + tid * DIM;
 
