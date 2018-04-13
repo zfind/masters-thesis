@@ -22,6 +22,8 @@
 
 #include "CudaEvaluator.h"
 
+#define MAX_PROGRAM_SIZE 100
+
 
 /**
  * \ingroup symbreg
@@ -33,24 +35,20 @@ public:
 
     bool initialize(StateP);
 
-    std::vector<double> domain;
-    std::vector<double> codomain;
-    uint nSamples;
-
-    char *postfixMem;
-    void convertToPostfixNew(IndividualP individual, char* postfixMem, uint& PROG_SIZE, uint& MEM_SIZE);
-
-    void loadFromFile(std::string filename, std::vector<std::vector<double>> &matrix, std::vector<double> &output);
-    std::vector<std::vector<double>> datasetInput;
-    void printSolution(std::vector<uint> &solution, std::vector<double> &solutionConst);
-    void convertToPostfix(IndividualP individual,
-                          std::vector<uint> &solution, std::vector<double> &solutionConstants);
-    CudaEvaluator *evaluator;
-
-    long convTime, ecfTime, cpuTime, gpuTime;
-
     ~SymbRegEvalOp();
 
+private:
+    uint NUM_SAMPLES;
+    std::vector<std::vector<double>> datasetInput;
+    std::vector<double> codomain;
+    void loadFromFile(std::string filename, std::vector<std::vector<double>> &matrix, std::vector<double> &output);
+
+    char *postfixBuffer;
+    void convertToPostfixNew(IndividualP individual, char *postfixMem, uint &PROG_SIZE, uint &MEM_SIZE);
+
+    CudaEvaluator *evaluator;
+
+    long conversionTime, ecfTime, cpuTime, gpuTime;
 };
 
 typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
