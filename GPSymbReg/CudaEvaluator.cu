@@ -12,6 +12,8 @@
 #define GPU_EVALUATE_ERROR do {d_output[tid] = NAN; return;} while(0);
 
 
+
+
 CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<double>> &input, vector<double> &output) :
         N(N), DIM(DIM), MAX_PROG_SIZE(MAX_PROG_SIZE), datasetInput(input), datasetOutput(output) {
     cudaMalloc((void **) &d_program, MAX_PROG_SIZE * sizeof(uint));
@@ -19,6 +21,8 @@ CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<do
     cudaMalloc((void **) &d_input, N * DIM * sizeof(double));
     cudaMalloc((void **) &d_output, N * sizeof(double));
     cudaMalloc((void **) &d_stack, N * MAX_PROG_SIZE * sizeof(double));
+    cudaMalloc((void **) &d_real, N * sizeof(double));
+    cudaMalloc((void **) &d_answer, sizeof(double));
 
     //  copy input matrix to 1D array
     double *h_input = new double[N * DIM];
@@ -29,6 +33,8 @@ CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<do
     }
 
     cudaMemcpy(d_input, h_input, N * DIM * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_real, &datasetOutput[0], N * sizeof(double), cudaMemcpyHostToDevice);
+
 
     delete[] h_input;
 
@@ -58,10 +64,14 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    d_evaluateIndividual<<<grid, block, shared_size>>>(d_program, d_programConst,
-            d_input, d_output, d_stack,
-            N, DIM, program.size());
-    cudaDeviceSynchronize();
+//    double fitness;
+
+    d_evaluateIndividualNew<<<grid, block, shared_size>>>(d_program, d_programConst,
+            d_input, d_output, d_stack, d_real,
+            N, DIM, program.size(), d_answer);
+//    cudaDeviceSynchronize();
+
+//    cudaMemcpy(&fitness, d_answer, sizeof(double), cudaMemcpyDeviceToHost);
 
     result.resize(N, 0.);
 //    double *h_output = new double[N];
@@ -79,6 +89,105 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
     return fitness;
 }
 
+
+
+__global__ void d_evaluateIndividualNew(uint *d_program,
+                                     double *d_programConstant,
+                                     double *d_input,
+                                     double *d_output,
+                                     double *d_stack,
+                                        double *d_real,
+                                     int N, int DIM, int prog_size, double *d_answer) {
+
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid >= N) return;
+
+//    double *stack = d_stack + tid * prog_size;
+
+//    double stack[50];
+
+    extern __shared__ double stackChunk[];
+    double *stack = stackChunk + threadIdx.x * prog_size;
+
+    double *input = d_input + tid * DIM;
+
+
+    int SP = 0;
+
+    double o1, o2, tmp;
+
+    for (int i = 0; i < prog_size; i++) {
+        if (d_program[i] >= ARR_2) {
+            o2 = stack[--SP];
+            o1 = stack[--SP];
+
+            switch (d_program[i]) {
+                case ADD:
+                    tmp = o1 + o2;
+                    break;
+                case SUB:
+                    tmp = o1 - o2;
+                    break;
+                case MUL:
+                    tmp = o1 * o2;
+                    break;
+                case DIV:
+                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                    break;
+                default:
+                    GPU_EVALUATE_ERROR
+            }
+
+
+        } else if (d_program[i] >= ARR_1) {
+            o1 = stack[--SP];
+
+            switch (d_program[i]) {
+                case SQR:
+                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                    break;
+                case SIN:
+                    tmp = sin(o1);
+                    break;
+                case COS:
+                    tmp = cos(o1);
+                    break;
+                default:
+                    GPU_EVALUATE_ERROR
+            }
+
+
+        } else if (d_program[i] == CONST) {
+            tmp = d_programConstant[i];
+
+        } else if (d_program[i] >= VAR && d_program[i] < CONST) {
+            uint code = d_program[i];
+            uint idx = code - VAR;
+            tmp = input[idx];
+
+        } else {
+            GPU_EVALUATE_ERROR
+        }
+
+        stack[SP++] = tmp;
+    }
+
+    double result = stack[--SP];
+
+    d_output[tid] = result;
+
+//    __syncthreads();
+//
+//    if (tid == 0) {
+//        result=0.;
+//        #pragma unroll
+//        for (uint i = 0; i < N; i++) {
+//            result += fabs(d_real[i] - d_output[i]);
+//        }
+//        *d_answer = result;
+//    }
+}
 
 __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_programConstant,

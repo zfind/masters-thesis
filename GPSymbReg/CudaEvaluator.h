@@ -58,7 +58,8 @@ private:
     double *d_input;
     double *d_output;
     double *d_stack;
-
+    double *d_real;
+    double *d_answer;
 };
 
 __global__ void d_evaluateIndividual(uint *d_program,
@@ -68,5 +69,13 @@ __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_stack,
                                      int N, int DIM, int prog_size);
 
+
+__global__ void d_evaluateIndividualNew(uint *d_program,
+                                        double *d_programConstant,
+                                        double *d_input,
+                                        double *d_output,
+                                        double *d_stack,
+                                        double *d_real,
+                                        int N, int DIM, int prog_size, double *d_answer);
 
 #endif //GPSYMBREG_CUDAEVALUATOR_H
