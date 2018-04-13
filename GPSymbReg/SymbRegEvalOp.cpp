@@ -62,7 +62,7 @@ void SymbRegEvalOp::printSolution(std::vector<uint> &solution, std::vector<doubl
     cerr << endl;
 }
 
-void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem, uint& PROG_SIZE, uint& MEM_SIZE) {
+void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem, uint& PROG_SIZE, uint& CONST_SIZE) {
     DBG(cerr << "=====================================================" << endl;)
 
     uint nTreeSize, nTree;
@@ -122,6 +122,7 @@ void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem
         PROG_SIZE = result.size();
         uint* prog = (uint*) postfixMem;
         double* progConst = (double*) &prog[PROG_SIZE];
+        CONST_SIZE = 0;
 
         for (int i = 0; i < result.size(); i++) {
             string pName = (*pTree)[result[i]]->primitive_->getName();
@@ -162,6 +163,7 @@ void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem
 //                tmpd[i] = 1.;
                 *progConst = 1.;
                 progConst++;
+                CONST_SIZE++;
             } else if (pName[0] == 'D' && pName[1] == '_') {
 //                tmp.push_back(CONST);
                 *prog = CONST;
@@ -171,13 +173,14 @@ void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char* postfixMem
 //                tmpd[i] = value;
                 *progConst = value;
                 progConst++;
+                CONST_SIZE++;
             } else {
                 cerr << pName << endl;
             }
         }
 
 //        DBG(printSolution(tmp, tmpd);)
-        MEM_SIZE = (char*) progConst - postfixMem;
+//        MEM_SIZE = (char*) progConst - postfixMem;
 //        cerr << "orig velicina:\t" << PROG_SIZE << "\tpostfix velicina:\t" << MEM_SIZE/ sizeof(uint) << endl;
     }
 
@@ -354,7 +357,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     // evaluiraj na gpu
     begin = std::chrono::steady_clock::now();
     vector<double> d_result;
-    double d_fitness = evaluator->d_evaluate(postfix, postfixConstants, datasetInput, codomain, d_result);
+    double d_fitness = evaluator->d_evaluate(postfixMem, PROG_SIZE, MEM_SIZE, d_result);
     end = std::chrono::steady_clock::now();
     diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     gpuTime += postfixConversionTime + diff;

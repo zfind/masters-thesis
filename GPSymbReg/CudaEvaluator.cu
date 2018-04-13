@@ -35,9 +35,12 @@ CudaEvaluator::CudaEvaluator(int N, int DIM, int MAX_PROG_SIZE, vector<vector<do
     cudaMemcpy(d_input, h_input, N * DIM * sizeof(double), cudaMemcpyHostToDevice);
     cudaMemcpy(d_real, &datasetOutput[0], N * sizeof(double), cudaMemcpyHostToDevice);
 
+    cudaMallocHost((void**)&postfixMemPinned, MAX_PROG_SIZE*(sizeof(uint) + sizeof(double)));
 
     delete[] h_input;
 
+
+    cerr << "INICIJALIZIRAM EVALUATOR" << endl;
 }
 
 CudaEvaluator::~CudaEvaluator() {
@@ -48,19 +51,18 @@ CudaEvaluator::~CudaEvaluator() {
     cudaFree(d_stack);
 }
 
-double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programConst,
-                                 vector<vector<double>> &input, vector<double> &real,
+double CudaEvaluator::d_evaluate(char* postfixMem, uint PROG_SIZE, uint CONST_SIZE,
                                  vector<double> &result) {
 
 
-    int PROG_SIZE = program.size();
+//    int PROG_SIZE = program.size();
 
-    cudaMemcpy(d_program, &program[0], program.size() * sizeof(uint), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_programConst, &programConst[0], program.size() * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_program, postfixMem, PROG_SIZE * sizeof(uint), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_programConst, postfixMem + PROG_SIZE * sizeof(uint), CONST_SIZE * sizeof(double), cudaMemcpyHostToDevice);
 
     dim3 block(128, 1);
     dim3 grid((N + block.x - 1) / block.x, 1);
-    size_t shared_size = block.x * program.size() * sizeof(double);
+    size_t shared_size = block.x * PROG_SIZE * sizeof(double);
 
 //    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
@@ -68,7 +70,7 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
     d_evaluateIndividualNew<<<grid, block, shared_size>>>(d_program, d_programConst,
             d_input, d_output, d_stack, d_real,
-            N, DIM, program.size(), d_answer);
+            N, DIM, PROG_SIZE, d_answer);
 //    cudaDeviceSynchronize();
 
 //    cudaMemcpy(&fitness, d_answer, sizeof(double), cudaMemcpyDeviceToHost);
@@ -83,7 +85,7 @@ double CudaEvaluator::d_evaluate(vector<uint> &program, vector<double> &programC
 
     double fitness = 0.;
     for (int i = 0; i < N; i++) {
-        fitness += fabs(real[i] - result[i]);
+        fitness += fabs(datasetOutput[i] - result[i]);
     }
 
     return fitness;
@@ -159,7 +161,8 @@ __global__ void d_evaluateIndividualNew(uint *d_program,
 
 
         } else if (d_program[i] == CONST) {
-            tmp = d_programConstant[i];
+            tmp = *d_programConstant;
+            d_programConstant++;
 
         } else if (d_program[i] >= VAR && d_program[i] < CONST) {
             uint code = d_program[i];
@@ -452,7 +455,7 @@ double CudaEvaluator::h_evaluateNew(char* postfixMem, uint PROG_SIZE, uint MEM_S
     return fitness;
 }
 
-
+/*
 void CudaEvaluator::evaluate(vector<uint> &postfix, vector<double> &postfixConstants) {
 
     // evaluiraj na cpu
@@ -473,3 +476,4 @@ void CudaEvaluator::evaluate(vector<uint> &postfix, vector<double> &postfixConst
     cerr << "host:\t" << h_fitness << "\tdev:\t" << d_fitness << endl;
 
 }
+ */

@@ -29,12 +29,12 @@ public:
 
     double h_evaluateNew(char* postfixMem, uint PROG_SIZE, uint MEM_SIZE, std::vector<double> &result);
 
-    double d_evaluate(vector<uint> &program, vector<double> &programConst,
-                      vector<vector<double>> &input, vector<double> &real,
+    double d_evaluate(char* postfixMem, uint PROG_SIZE, uint CONST_SIZE,
                       vector<double> &result);
 
     void evaluate(std::vector<uint> &solution, std::vector<double> &solutionConstants);
 
+    char *postfixMemPinned;
 
 private:
 
