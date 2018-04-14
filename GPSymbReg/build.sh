@@ -10,5 +10,7 @@ cd build/
 cmake ..
 make
 
+cp GPSymbReg ../
+
 # run
-#./GPSymbReg ../parameters.txt
+# cd ../ && ./GPSymbReg parameters.txt

@@ -23,8 +23,8 @@ public:
 
     ~CudaEvaluator();
 
-    double h_evaluateNew(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                         vector<double> &result);
+    double h_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
+                      vector<double> &result);
 
     double d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
                       vector<double> &result);
@@ -33,8 +33,8 @@ public:
 
 private:
 
-    double h_evaluateIndividualNew(char *postfixMem, uint PROG_SIZE, uint MEM_SIZE,
-                                   std::vector<double> &input);
+    double h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, uint MEM_SIZE,
+                                std::vector<double> &input);
 
 private:
     int NUM_SAMPLES;
@@ -54,11 +54,11 @@ private:
 };
 
 
-__global__ void d_evaluateIndividualNew(uint *d_program,
-                                        double *d_programConst,
-                                        double *d_datasetInput,
-                                        double *d_resultOutput,
-                                        int N, int DIM, int PROG_SIZE);
+__global__ void d_evaluateIndividual(uint *d_program,
+                                     double *d_programConst,
+                                     double *d_datasetInput,
+                                     double *d_resultOutput,
+                                     int N, int DIM, int PROG_SIZE);
 
 
 #endif //GPSYMBREG_CUDAEVALUATOR_H

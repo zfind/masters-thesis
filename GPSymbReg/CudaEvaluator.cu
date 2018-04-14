@@ -61,7 +61,7 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
     size_t shared_size = block.x * PROG_SIZE * sizeof(double);
 
-    d_evaluateIndividualNew<<<grid, block, shared_size>>>(d_program, d_programConst,
+    d_evaluateIndividual <<<grid, block, shared_size>>>(d_program, d_programConst,
             d_datasetInput, d_resultOutput,
             NUM_SAMPLES, INPUT_DIMENSION, PROG_SIZE);
 
@@ -78,11 +78,11 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
 }
 
 
-__global__ void d_evaluateIndividualNew(uint *d_program,
-                                        double *d_programConst,
-                                        double *d_datasetInput,
-                                        double *d_resultOutput,
-                                        int N, int DIM, int PROG_SIZE) {
+__global__ void d_evaluateIndividual(uint *d_program,
+                                     double *d_programConst,
+                                     double *d_datasetInput,
+                                     double *d_resultOutput,
+                                     int N, int DIM, int PROG_SIZE) {
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -177,8 +177,8 @@ __global__ void d_evaluateIndividualNew(uint *d_program,
 }
 
 
-double CudaEvaluator::h_evaluateIndividualNew(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                                              std::vector<double> &input) {
+double CudaEvaluator::h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
+                                           std::vector<double> &input) {
 
     uint *program = (uint *) postfixMem;
     double *programConst = (double *) &program[PROG_SIZE];
@@ -249,12 +249,12 @@ double CudaEvaluator::h_evaluateIndividualNew(char *postfixMem, uint PROG_SIZE, 
 }
 
 
-double CudaEvaluator::h_evaluateNew(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE, std::vector<double> &result) {
+double CudaEvaluator::h_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE, std::vector<double> &result) {
     result.resize(NUM_SAMPLES, 0.);
 
     double fitness = 0.;
     for (int i = 0; i < NUM_SAMPLES; i++) {
-        result[i] = h_evaluateIndividualNew(postfixMem, PROG_SIZE, CONST_SIZE, datasetInput[i]);
+        result[i] = h_evaluateIndividual(postfixMem, PROG_SIZE, CONST_SIZE, datasetInput[i]);
         fitness += fabs(datasetOutput[i] - result[i]);
     }
 

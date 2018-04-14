@@ -125,9 +125,9 @@ void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char *postfixMem
 bool SymbRegEvalOp::initialize(StateP state) {
 
     uint BUFFER_SIZE = MAX_PROGRAM_SIZE * (sizeof(uint) + sizeof(double));
-    postfixBuffer = new char[4 * 1000];
+    postfixBuffer = new char[BUFFER_SIZE];
 
-    loadFromFile("/home/zac/Projekti/masters-thesis/GPSymbReg/input.txt", datasetInput, codomain);
+    loadFromFile("input.txt", datasetInput, codomain);
 
     NUM_SAMPLES = datasetInput.size();
     uint INPUT_DIMENSION = datasetInput[0].size();
@@ -163,7 +163,7 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     //  evaluate on CPU
     begin = std::chrono::steady_clock::now();
     vector<double> h_result;
-    double h_fitness = evaluator->h_evaluateNew(postfixBuffer, PROG_SIZE, MEM_SIZE, h_result);
+    double h_fitness = evaluator->h_evaluate(postfixBuffer, PROG_SIZE, MEM_SIZE, h_result);
     end = std::chrono::steady_clock::now();
     diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
     cpuTime += postfixConversionTime + diff;
