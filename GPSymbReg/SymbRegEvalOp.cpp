@@ -65,6 +65,8 @@ void SymbRegEvalOp::convertToPostfixNew(IndividualP individual, char *postfixMem
                 cerr << endl;)
 
 
+        DBG(cerr << "Velicina:\t" << length << endl;)
+
         PROG_SIZE = length;
         CONST_SIZE = 0;
         uint *program = (uint *) postfixMem;

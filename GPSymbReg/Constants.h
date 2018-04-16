@@ -2,7 +2,11 @@
 #define GPSYMBREG_CONSTANTS_H
 
 
-#define DOUBLE_EQUALS 1E-7
+#define DOUBLE_EQUALS       1E-4
+#define MAX_PROGRAM_SIZE    500
+#define THREADS_IN_BLOCK    128
+#define MAX_STACK_SIZE      500
+
 
 
 #define ARITY_VAR   0x00000000

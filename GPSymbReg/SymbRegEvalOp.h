@@ -22,8 +22,6 @@
 
 #include "CudaEvaluator.h"
 
-#define MAX_PROGRAM_SIZE 100
-
 
 /**
  * \ingroup symbreg

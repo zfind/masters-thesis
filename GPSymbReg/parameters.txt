@@ -8,7 +8,7 @@
     <Genotype>
         <Tree>
             <Entry desc="" key="functionset">sin cos + - / *</Entry>
-            <Entry desc="" key="maxdepth">4</Entry>
+            <Entry desc="" key="maxdepth">8</Entry>
             <Entry desc="" key="terminalset">1 X0 X1 X2 X3 X4 [-1, 1]</Entry>
         </Tree>
     </Genotype>
@@ -19,7 +19,7 @@
         <Entry desc="" key="milestone.filename">m.txt</Entry>
         <Entry desc="" key="mutation.indprob">0.3</Entry>
         <Entry desc="" key="population.size">500</Entry>
-        <Entry desc="" key="term.stagnation">20</Entry>
+        <Entry desc="" key="term.stagnation">10</Entry>
 		<Entry desc="" key="term.fitnessval">0</Entry>
     </Registry>
 </ECF>

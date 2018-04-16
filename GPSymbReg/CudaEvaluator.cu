@@ -4,7 +4,6 @@
 #include <limits>
 
 #include "CudaEvaluator.h"
-#include "Constants.h"
 
 
 #define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
@@ -56,10 +55,9 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
     cudaMemcpy(d_programConst, postfixMem + PROG_SIZE * sizeof(uint), CONST_SIZE * sizeof(double),
                cudaMemcpyHostToDevice);
 
-    uint THREADS_IN_BLOCK = 128;
     dim3 block(THREADS_IN_BLOCK, 1);
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
-    size_t SHARED_MEM_SIZE = THREADS_IN_BLOCK * PROG_SIZE * sizeof(uint);
+    size_t SHARED_MEM_SIZE = PROG_SIZE * sizeof(uint);
 
     d_evaluateIndividual <<<grid, block, SHARED_MEM_SIZE>>>(d_program, d_programConst,
             d_datasetInput, d_datasetOutput, d_resultOutput, d_globalStack, d_resultFitness,
@@ -93,8 +91,9 @@ __global__ void d_evaluateIndividual(uint *d_program,
     if (tid == 0) *d_resultFitness = 0.;
 
     extern __shared__ uint shared_programCache[];
-    uint tidInCurrentBlock = threadIdx.x;
-    if (tidInCurrentBlock < PROG_SIZE) shared_programCache[tidInCurrentBlock] = d_program[tidInCurrentBlock];
+    for (uint idx = threadIdx.x; idx < PROG_SIZE; idx += THREADS_IN_BLOCK) {
+        shared_programCache[idx] = d_program[idx];
+    }
 
     __syncthreads();
 
@@ -104,7 +103,7 @@ __global__ void d_evaluateIndividual(uint *d_program,
     // in global memory, slow
 //    double *stack = d_globalStack + tid * PROG_SIZE;
     // in local, faster
-     double stack[2000];
+     double stack[MAX_STACK_SIZE];
 
     //  stack in low latency shared memory
 //    extern __shared__ double stackChunk[];

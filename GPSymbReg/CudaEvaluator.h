@@ -12,10 +12,8 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include <chrono>
-
+#include "Constants.h"
 using namespace std;
-
-
 
 
 class CudaEvaluator {
