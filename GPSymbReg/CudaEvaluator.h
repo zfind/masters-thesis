@@ -47,17 +47,20 @@ private:
     uint *d_program;
     double *d_programConst;
     double *d_datasetInput;
-    //double *d_datasetOutput;
-    //double *d_globalStack;
+    double *d_datasetOutput;
+    double *d_globalStack;
     double *d_resultOutput;
-    //double *d_resultFitness;
+    double *d_resultFitness;
 };
 
 
 __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_programConst,
                                      double *d_datasetInput,
+                                     double *d_datasetOutput,
                                      double *d_resultOutput,
+                                     double *d_globalStack,
+                                     double *d_resultFitness,
                                      int N, int DIM, int PROG_SIZE);
 
 

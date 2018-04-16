@@ -19,9 +19,9 @@ CudaEvaluator::CudaEvaluator(uint NUM_SAMPLES, uint INPUT_DIMENSION, uint MAX_PR
     cudaMalloc((void **) &d_programConst, MAX_PROG_SIZE * sizeof(double));
     cudaMalloc((void **) &d_datasetInput, NUM_SAMPLES * INPUT_DIMENSION * sizeof(double));
     cudaMalloc((void **) &d_resultOutput, NUM_SAMPLES * sizeof(double));
-    //cudaMalloc((void **) &d_globalStack, NUM_SAMPLES * MAX_PROG_SIZE * sizeof(double));
-    //cudaMalloc((void **) &d_datasetOutput, NUM_SAMPLES * sizeof(double));
-    //cudaMalloc((void **) &d_resultFitness, sizeof(double));
+    cudaMalloc((void **) &d_globalStack, NUM_SAMPLES * MAX_PROG_SIZE * sizeof(double));
+    cudaMalloc((void **) &d_datasetOutput, NUM_SAMPLES * sizeof(double));
+    cudaMalloc((void **) &d_resultFitness, sizeof(double));
 
     //  copy input matrix to 1D array
     double *h_input = new double[NUM_SAMPLES * INPUT_DIMENSION];
@@ -32,7 +32,7 @@ CudaEvaluator::CudaEvaluator(uint NUM_SAMPLES, uint INPUT_DIMENSION, uint MAX_PR
     }
 
     cudaMemcpy(d_datasetInput, h_input, NUM_SAMPLES * INPUT_DIMENSION * sizeof(double), cudaMemcpyHostToDevice);
-    //cudaMemcpy(d_datasetOutput, &datasetOutput[0], NUM_SAMPLES * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_datasetOutput, &datasetOutput[0], NUM_SAMPLES * sizeof(double), cudaMemcpyHostToDevice);
 
     cudaMallocHost((void **) &postfixMemPinned, MAX_PROG_SIZE * (sizeof(uint) + sizeof(double)));
 
@@ -59,20 +59,21 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
     uint THREADS_IN_BLOCK = 128;
     dim3 block(THREADS_IN_BLOCK, 1);
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
-    size_t shared_size = block.x * PROG_SIZE * sizeof(double);
+//    size_t shared_size = THREADS_IN_BLOCK * PROG_SIZE * sizeof(double);
 
-    d_evaluateIndividual <<<grid, block, shared_size>>>(d_program, d_programConst,
-            d_datasetInput, d_resultOutput,
+    d_evaluateIndividual <<<grid, block>>>(d_program, d_programConst,
+            d_datasetInput, d_datasetOutput, d_resultOutput, d_globalStack, d_resultFitness,
             NUM_SAMPLES, INPUT_DIMENSION, PROG_SIZE);
 
 
-    result.resize(NUM_SAMPLES, 0.);
-    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(double), cudaMemcpyDeviceToHost);
+//    result.resize(NUM_SAMPLES, 0.);
+//    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(double), cudaMemcpyDeviceToHost);
 
     double fitness = 0.;
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        fitness += fabs(datasetOutput[i] - result[i]);
-    }
+    cudaMemcpy(&fitness, d_resultFitness, sizeof(double), cudaMemcpyDeviceToHost);
+//    for (int i = 0; i < NUM_SAMPLES; i++) {
+//        fitness += fabs(datasetOutput[i] - result[i]);
+//    }
 
     return fitness;
 }
@@ -81,21 +82,29 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
 __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_programConst,
                                      double *d_datasetInput,
+                                     double *d_datasetOutput,
                                      double *d_resultOutput,
+                                     double *d_globalStack,
+                                     double *d_resultFitness,
                                      int N, int DIM, int PROG_SIZE) {
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
+    if (tid == 0) *d_resultFitness = 0.;
+
+    __syncthreads();
+
     if (tid >= N) return;
 
+
     // in global memory, slow
-    // double *stack = d_globalStack + tid * PROG_SIZE;
+    double *stack = d_globalStack + tid * PROG_SIZE;
     // in local, faster
     // double stack[50];
 
     //  stack in low latency shared memory
-    extern __shared__ double stackChunk[];
-    double *stack = stackChunk + threadIdx.x * PROG_SIZE;
+    //extern __shared__ double stackChunk[];
+    //double *stack = stackChunk + threadIdx.x * PROG_SIZE;
 
     double *inputSample = d_datasetInput + tid * DIM;
 
@@ -174,6 +183,10 @@ __global__ void d_evaluateIndividual(uint *d_program,
         }
         *d_resultFitness = result;
     } */
+
+    result = fabs(d_datasetOutput[tid] - result);
+
+    atomicAdd(d_resultFitness, result);
 }
 
 
