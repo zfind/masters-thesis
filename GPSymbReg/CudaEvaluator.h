@@ -16,6 +16,8 @@
 using namespace std;
 
 
+
+
 class CudaEvaluator {
 public:
     CudaEvaluator(uint NUM_SAMPLES, uint INPUT_DIMENSION, uint MAX_PROG_SIZE,

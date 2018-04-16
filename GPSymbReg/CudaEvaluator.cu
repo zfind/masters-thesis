@@ -59,9 +59,9 @@ double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SI
     uint THREADS_IN_BLOCK = 128;
     dim3 block(THREADS_IN_BLOCK, 1);
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
-//    size_t shared_size = THREADS_IN_BLOCK * PROG_SIZE * sizeof(double);
+    size_t SHARED_MEM_SIZE = THREADS_IN_BLOCK * PROG_SIZE * sizeof(uint);
 
-    d_evaluateIndividual <<<grid, block>>>(d_program, d_programConst,
+    d_evaluateIndividual <<<grid, block, SHARED_MEM_SIZE>>>(d_program, d_programConst,
             d_datasetInput, d_datasetOutput, d_resultOutput, d_globalStack, d_resultFitness,
             NUM_SAMPLES, INPUT_DIMENSION, PROG_SIZE);
 
@@ -88,9 +88,13 @@ __global__ void d_evaluateIndividual(uint *d_program,
                                      double *d_resultFitness,
                                      int N, int DIM, int PROG_SIZE) {
 
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    uint tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid == 0) *d_resultFitness = 0.;
+
+    extern __shared__ uint shared_programCache[];
+    uint tidInCurrentBlock = threadIdx.x;
+    if (tidInCurrentBlock < PROG_SIZE) shared_programCache[tidInCurrentBlock] = d_program[tidInCurrentBlock];
 
     __syncthreads();
 
@@ -98,13 +102,13 @@ __global__ void d_evaluateIndividual(uint *d_program,
 
 
     // in global memory, slow
-    double *stack = d_globalStack + tid * PROG_SIZE;
+//    double *stack = d_globalStack + tid * PROG_SIZE;
     // in local, faster
-    // double stack[50];
+     double stack[2000];
 
     //  stack in low latency shared memory
-    //extern __shared__ double stackChunk[];
-    //double *stack = stackChunk + threadIdx.x * PROG_SIZE;
+//    extern __shared__ double stackChunk[];
+//    double *stack = stackChunk + threadIdx.x * PROG_SIZE;
 
     double *inputSample = d_datasetInput + tid * DIM;
 
@@ -114,11 +118,11 @@ __global__ void d_evaluateIndividual(uint *d_program,
 
     for (int i = 0; i < PROG_SIZE; i++) {
 
-        if (d_program[i] >= ARITY_2) {
+        if (shared_programCache[i] >= ARITY_2) {
             o2 = stack[--SP];
             o1 = stack[--SP];
 
-            switch (d_program[i]) {
+            switch (shared_programCache[i]) {
                 case ADD:
                     tmp = o1 + o2;
                     break;
@@ -135,10 +139,10 @@ __global__ void d_evaluateIndividual(uint *d_program,
                     GPU_EVALUATE_ERROR
             }
 
-        } else if (d_program[i] >= ARITY_1) {
+        } else if (shared_programCache[i] >= ARITY_1) {
             o1 = stack[--SP];
 
-            switch (d_program[i]) {
+            switch (shared_programCache[i]) {
                 case SQR:
                     tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
                     break;
@@ -152,12 +156,12 @@ __global__ void d_evaluateIndividual(uint *d_program,
                     GPU_EVALUATE_ERROR
             }
 
-        } else if (d_program[i] == CONST) {
+        } else if (shared_programCache[i] == CONST) {
             tmp = *d_programConst;
             d_programConst++;
 
-        } else if (d_program[i] >= VAR && d_program[i] < CONST) {
-            code = d_program[i];
+        } else if (shared_programCache[i] >= VAR && shared_programCache[i] < CONST) {
+            code = shared_programCache[i];
             idx = code - VAR;
             tmp = inputSample[idx];
 
