@@ -2,8 +2,8 @@
 // Created by zac on 04.01.18..
 //
 
-#ifndef NEURALNET_NET_H
-#define NEURALNET_NET_H
+#ifndef NET_H
+#define NET_H
 
 #include <vector>
 #include <cstring>
@@ -19,30 +19,38 @@
 
 using namespace std;
 
+
+extern "C"
 __global__ void mulMatrixKernel(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC);
 
 
 class Net {
 private:
+
     vector<int> layers;
+
     double *h_output;
     double *h_new_output;
 
-    double *d_datasetInput, *d_datasetOutput;
     double *d_output;
     double *d_new_output;
 
-
+    double *d_datasetInput;
+    double *d_datasetOutput;
 
 public:
 
     Net(vector<int> layers, Dataset &dataset);
 
-    double evaluate(double weights[], Dataset& dataset);
+    ~Net();
 
-    double evaluateParallel(double weights[], Dataset & dataset);
+    double evaluate(double weights[], Dataset &dataset);
+
+    double evaluateGPU(double *weights, Dataset &dataset);
 
     int getWeightsCount();
+
+private:
 
     double sigmoid(double x);
 
@@ -50,9 +58,7 @@ public:
 
     void mulMatrix(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC);
 
-    ~Net();
-
 };
 
 
-#endif //NEURALNET_NET_H
+#endif //NET_H

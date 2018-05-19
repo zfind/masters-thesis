@@ -2,8 +2,8 @@
 // Created by zac on 19.05.18..
 //
 
-#ifndef CUDANETEVOLUTION_CUDAEVALUATOR_H
-#define CUDANETEVOLUTION_CUDAEVALUATOR_H
+#ifndef CUDAEVALUATOR_H
+#define CUDAEVALUATOR_H
 
 #include "Net.h"
 #include "Dataset.h"
@@ -14,25 +14,18 @@ private:
     Dataset &dataset;
 
     double *d_newPopulation;
-//    int populationSize;
-//    int DIM;
 
 public:
-    CudaEvaluator(Net &net, Dataset &dataset) :
-            net(net), dataset(dataset) {
-        //    populationSize = size;
-//    DIM = dimensions;
-        d_newPopulation = nullptr;
-//    cudaMalloc((void **) &d_newPopulation, populationSize * DIM * sizeof(double));
+    CudaEvaluator(Net &net, Dataset &dataset);
 
-    }
+    ~CudaEvaluator();
 
-    double evaluate(double weights[]);
+    double evaluateIndividual(double weights[]);
 
-    void evaluateNewParallel(double *newPopulation, int size, int dimensions,
-                             vector<SolutionFitness> &newPopulationFitnessMap);
+    void evaluatePopulation(double *newPopulation, int size, int dimensions,
+                            vector<SolutionFitness> &newPopulationFitnessMap);
 
 };
 
 
-#endif //CUDANETEVOLUTION_CUDAEVALUATOR_H
+#endif //CUDAEVALUATOR_H

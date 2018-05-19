@@ -4,21 +4,35 @@
 
 #include "CudaEvaluator.h"
 
-double CudaEvaluator::evaluate(double *weights) {
+CudaEvaluator::CudaEvaluator(Net &net, Dataset &dataset) :
+        net(net), dataset(dataset) {
+    d_newPopulation = nullptr;
+}
+
+CudaEvaluator::~CudaEvaluator() {
+    if (d_newPopulation != nullptr) {
+        cudaFree(d_newPopulation);
+    }
+}
+
+double CudaEvaluator::evaluateIndividual(double *weights) {
     double fitness = net.evaluate(weights, dataset);
     return fitness;
 }
 
-void CudaEvaluator::evaluateNewParallel(double* newPopulation, int size, int dimensions, vector<SolutionFitness>& newPopulationFitnessMap) {
+void CudaEvaluator::evaluatePopulation(double *newPopulation, int size, int dimensions,
+                                       vector<SolutionFitness> &newPopulationFitnessMap) {
     if (d_newPopulation == nullptr) {
         cudaMalloc((void **) &d_newPopulation, size * dimensions * sizeof(double));
     }
-    cudaMemcpy(d_newPopulation, newPopulation, (size) * dimensions * sizeof(double),
+    cudaMemcpy(d_newPopulation,
+               newPopulation, (size) * dimensions * sizeof(double),
                cudaMemcpyHostToDevice);
+
     newPopulationFitnessMap.clear();
 
     for (int i = 0; i < size; i++) {
-        double fitness = net.evaluateParallel(&d_newPopulation[i * dimensions], dataset);
+        double fitness = net.evaluateGPU(&d_newPopulation[i * dimensions], dataset);
         newPopulationFitnessMap.push_back(SolutionFitness(fitness, i));
     }
 }

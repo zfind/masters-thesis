@@ -2,8 +2,8 @@
 // Created by zac on 06.01.18..
 //
 
-#ifndef NEURALNET_CLONALG_H
-#define NEURALNET_CLONALG_H
+#ifndef CLONALG_H
+#define CLONALG_H
 
 #include <algorithm>
 #include <vector>
@@ -48,11 +48,15 @@ private:
 
 public:
 
-    ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, CudaEvaluator& evaluator);
+    ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, CudaEvaluator &evaluator);
 
     ~ClonAlg();
 
     Solution &run();
+
+    Solution &runParallel();
+
+private:
 
     void clonePopulation(vector<Solution> &clones);
 
@@ -74,17 +78,16 @@ public:
 
     void evaluateNew();
 
+    void evaluateNewParallel();
+
     Solution &pickBest();
 
     void printPopulation();
 
     void printPopulation(vector<Solution> &population);
 
-    Solution &runParallel();
-
-    void evaluateNewParallel();
 
 };
 
 
-#endif //NEURALNET_CLONALG_H
+#endif //CLONALG_H

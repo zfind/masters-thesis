@@ -8,11 +8,11 @@ int main() {
     Dataset dataset;
 
     vector<int> layers{4, 5, 3, 3};
-    Net net(layers, dataset);
+    Net net{layers, dataset};
 
     CudaEvaluator evaluator{net, dataset};
 
-    ClonAlg alg(40, 0.001, 1000, net.getWeightsCount(), evaluator);
+    ClonAlg alg{40, 0.001, 1000, net.getWeightsCount(), evaluator};
 
 //    Solution &solution = alg.run();
 

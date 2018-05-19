@@ -6,20 +6,21 @@
 #define NEURALNET_MATRIX_H
 
 #include <cstdio>
+
 using namespace std;
 
 
 class Matrix {
 public:
-    int RR;
-    int CC;
+    const int RR;
+    const int CC;
     double *elements;
 
     Matrix(int RR, int CC);
+
     ~Matrix();
 
     void print();
-
 };
 
 

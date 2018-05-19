@@ -2,8 +2,8 @@
 // Created by zac on 07.01.18..
 //
 
-#ifndef NEURALNET_DATASET_H
-#define NEURALNET_DATASET_H
+#ifndef DATASET_H
+#define DATASET_H
 
 #include <cstring>
 #include "Matrix.h"
@@ -18,8 +18,7 @@ public:
     Matrix datasetOutput;
 
     Dataset();
-
 };
 
 
-#endif //NEURALNET_DATASET_H
+#endif //DATASET_H
