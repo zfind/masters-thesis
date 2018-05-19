@@ -8,10 +8,14 @@
 #include <vector>
 #include <cstring>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#include "Matrix.hpp"
-#include "Dataset.hpp"
+
+#include "Common.h"
+#include "Dataset.h"
+#include "Matrix.h"
 
 using namespace std;
 
@@ -28,6 +32,10 @@ private:
     double *d_output;
     double *d_new_output;
 
+    double *d_newPopulation;
+//    int populationSize;
+//    int DIM;
+
 public:
 
     Net(vector<int> layers, Dataset &dataset);
@@ -35,6 +43,8 @@ public:
     double evaluate(double weights[], Dataset& dataset);
 
     double evaluateParallel(double weights[], Dataset & dataset);
+
+    void evaluateNewParallel(double* newPopulation, int size, int dimensions, vector<SolutionFitness>& newPopulationFitnessMap, Dataset& dataset);
 
     int getWeightsCount();
 

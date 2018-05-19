@@ -11,13 +11,13 @@
 #include <array>
 #include <cstring>
 #include <iostream>
-#include "Net.hpp"
-#include "Dataset.hpp"
+
+#include "Common.h"
+#include "Dataset.h"
+#include "Net.h"
 
 using namespace std;
 
-typedef pair<double, vector<double >> Solution;
-typedef pair<double, int> SolutionFitness;
 
 class ClonAlg {
 private:

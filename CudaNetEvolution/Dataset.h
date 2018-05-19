@@ -6,7 +6,7 @@
 #define NEURALNET_DATASET_H
 
 #include <cstring>
-#include "Matrix.hpp"
+#include "Matrix.h"
 
 class Dataset {
 public:

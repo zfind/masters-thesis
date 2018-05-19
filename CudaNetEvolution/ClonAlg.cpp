@@ -3,7 +3,7 @@
 //
 
 
-#include "ClonAlg.hpp"
+#include "ClonAlg.h"
 
 Solution &ClonAlg::pickBest() {
     double bestFitness = 1.E7;
@@ -37,7 +37,7 @@ ClonAlg::ClonAlg(int populationSize, double minimalFitness, int maxIters, int di
     newPopulation = (double *) malloc((newPopulationSize + D) * dimensions * sizeof(double));
     vector<pair<double, int>> newPopulationMap;
 
-    cudaMalloc((void **) &d_newPopulation, (newPopulationSize + D) * dimensions * sizeof(double));
+//    cudaMalloc((void **) &d_newPopulation, (newPopulationSize + D) * dimensions * sizeof(double));
 
     for (int i = 0; i < populationSize; i++) {
         vector<double> weights(dimensions);
@@ -253,13 +253,8 @@ Solution &ClonAlg::runParallel() {
 }
 
 void ClonAlg::evaluateNewParallel() {
-    cudaMemcpy(d_newPopulation, newPopulation, (newPopulationSize + D) * dimensions * sizeof(double),
-               cudaMemcpyHostToDevice);
-    newPopulationFitnessMap.clear();
-
-    for (int i = 0; i < newPopulationSize + D; i++) {
-        double fitness = net.evaluateParallel(&d_newPopulation[i * dimensions], dataset);
-        newPopulationFitnessMap.push_back(SolutionFitness(fitness, i));
-    }
+    net.evaluateNewParallel(newPopulation, newPopulationSize+D, dimensions, newPopulationFitnessMap, dataset);
 }
+
+
 

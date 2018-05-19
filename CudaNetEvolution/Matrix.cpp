@@ -3,7 +3,7 @@
 //
 
 
-#include "Matrix.hpp"
+#include "Matrix.h"
 
 Matrix::Matrix(int RR, int CC) : RR(RR), CC(CC) {
     this->elements = new double[RR*CC];

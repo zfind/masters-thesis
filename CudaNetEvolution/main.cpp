@@ -1,6 +1,7 @@
 #include <iostream>
-#include "Net.hpp"
-#include "ClonAlg.hpp"
+#include "Net.h"
+#include "ClonAlg.h"
+#include "Dataset.h"
 
 using namespace std;
 
