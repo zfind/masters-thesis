@@ -13,8 +13,8 @@
 #include <iostream>
 
 #include "Common.h"
-#include "Dataset.h"
-#include "Net.h"
+#include "CudaEvaluator.h"
+
 
 using namespace std;
 
@@ -36,8 +36,7 @@ private:
     double minimalFitness;
     int dimensions;
 
-    Net &net;
-    Dataset &dataset;
+    CudaEvaluator evaluator;
 
     vector<Solution> population;
 
@@ -49,7 +48,7 @@ private:
 
 public:
 
-    ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, Net &net, Dataset &dataset);
+    ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, CudaEvaluator& evaluator);
 
     ~ClonAlg();
 

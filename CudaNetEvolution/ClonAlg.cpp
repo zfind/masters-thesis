@@ -17,7 +17,7 @@ Solution &ClonAlg::pickBest() {
     return *best;
 }
 
-ClonAlg::ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, Net &net, Dataset &dataset) :
+ClonAlg::ClonAlg(int populationSize, double minimalFitness, int maxIters, int dimensions, CudaEvaluator& evaluator) :
         populationSize(populationSize),
         minimalFitness(minimalFitness),
         maxIter(maxIters),
@@ -25,8 +25,7 @@ ClonAlg::ClonAlg(int populationSize, double minimalFitness, int maxIters, int di
         rng(0),
         uniformRealDistribution(uniform_real_distribution<double>(0., 1.)),
         normalDistribution(normal_distribution<double>(0., 1.)),
-        net(net),
-        dataset(dataset) {
+        evaluator(evaluator) {
 
 
     int maxClones = 0;
@@ -44,7 +43,7 @@ ClonAlg::ClonAlg(int populationSize, double minimalFitness, int maxIters, int di
         for (int j = 0; j < dimensions; j++) {
             weights[j] = uniformRealDistribution(rng) * (WEIGHT_UPPER_BOUND - WEIGHT_LOWER_BOUND) + WEIGHT_LOWER_BOUND;
         }
-        double fitness = net.evaluate(&weights[0], dataset);
+        double fitness = evaluator.evaluate(&weights[0]);
         population.push_back(Solution(fitness, weights));
     }
 
@@ -61,7 +60,7 @@ void ClonAlg::create(vector<Solution> &solutions, int size) {
         for (int j = 0; j < dimensions; j++) {
             weights[j] = uniformRealDistribution(rng) * (WEIGHT_UPPER_BOUND - WEIGHT_LOWER_BOUND) + WEIGHT_LOWER_BOUND;
         }
-        double fitness = net.evaluate(&weights[0], dataset);
+        double fitness = evaluator.evaluate(&weights[0]);
         Solution solution(fitness, weights);
         solutions.push_back(solution);
     }
@@ -89,7 +88,7 @@ void ClonAlg::mutate(vector<Solution> &clones) {
             int index = (int) (uniformRealDistribution(rng) * (double) dimensions);
             current.second[index] += normalDistribution(rng);
         }
-        current.first = net.evaluate(&current.second[0], dataset);
+        current.first = evaluator.evaluate(&current.second[0]);
     }
 
 }
@@ -221,7 +220,7 @@ void ClonAlg::selectNewSolutions(int beginIdx, int endIdx) {
 void ClonAlg::evaluateNew() {
     newPopulationFitnessMap.clear();
     for (int i = 0; i < newPopulationSize + D; i++) {
-        double fitness = net.evaluate(&newPopulation[i * dimensions], dataset);
+        double fitness = evaluator.evaluate(&newPopulation[i * dimensions]);
         newPopulationFitnessMap.push_back(SolutionFitness(fitness, i));
     }
 }
@@ -253,7 +252,7 @@ Solution &ClonAlg::runParallel() {
 }
 
 void ClonAlg::evaluateNewParallel() {
-    net.evaluateNewParallel(newPopulation, newPopulationSize+D, dimensions, newPopulationFitnessMap, dataset);
+    evaluator.evaluateNewParallel(newPopulation, newPopulationSize+D, dimensions, newPopulationFitnessMap);
 }
 
 

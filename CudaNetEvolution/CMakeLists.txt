@@ -17,13 +17,15 @@ set(SOURCE_FILES
         Dataset.cpp
         Matrix.h
         Matrix.cpp
-        Net.h)
+        Net.h
+        CudaEvaluator.h
+        CudaEvaluator.cu)
 
 
-cuda_add_library(CudaNet_o Net.cu Common.h Matrix.h Dataset.h)
+cuda_add_library(CudaEvaluator_o Net.cu CudaEvaluator.cu)
 
 cuda_add_executable(CudaNetEvolution main.cpp ${SOURCE_FILES})
 
 target_link_libraries(CudaNetEvolution ${CUDA_LIBRARIES})
 
-target_link_libraries(CudaNetEvolution CudaNet_o)
+target_link_libraries(CudaNetEvolution CudaEvaluator_o)

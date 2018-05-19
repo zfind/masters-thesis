@@ -32,9 +32,7 @@ private:
     double *d_output;
     double *d_new_output;
 
-    double *d_newPopulation;
-//    int populationSize;
-//    int DIM;
+
 
 public:
 
@@ -43,8 +41,6 @@ public:
     double evaluate(double weights[], Dataset& dataset);
 
     double evaluateParallel(double weights[], Dataset & dataset);
-
-    void evaluateNewParallel(double* newPopulation, int size, int dimensions, vector<SolutionFitness>& newPopulationFitnessMap, Dataset& dataset);
 
     int getWeightsCount();
 

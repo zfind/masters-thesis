@@ -1,7 +1,6 @@
 #include <iostream>
-#include "Net.h"
+#include "CudaEvaluator.h"
 #include "ClonAlg.h"
-#include "Dataset.h"
 
 using namespace std;
 
@@ -11,7 +10,9 @@ int main() {
     vector<int> layers{4, 5, 3, 3};
     Net net(layers, dataset);
 
-    ClonAlg alg(40, 0.001, 1000, net.getWeightsCount(), net, dataset);
+    CudaEvaluator evaluator{net, dataset};
+
+    ClonAlg alg(40, 0.001, 1000, net.getWeightsCount(), evaluator);
 
 //    Solution &solution = alg.run();
 

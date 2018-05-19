@@ -26,10 +26,6 @@ Net::Net(vector<int> layers, Dataset &dataset) {
     cudaMalloc((void **) &d_output, dataset.SIZE * maxCols * sizeof(double));
     cudaMalloc((void **) &d_new_output, dataset.SIZE * maxCols * sizeof(double));
 
-//    populationSize = size;
-//    DIM = dimensions;
-    d_newPopulation = nullptr;
-//    cudaMalloc((void **) &d_newPopulation, populationSize * DIM * sizeof(double));
 }
 
 double Net::evaluate(double weights[], Dataset& dataset) {
@@ -201,16 +197,3 @@ void Net::mulMatrix(double *mA, int rA, int cA, double *mB, int rB, int cB, doub
 }
 
 
-void Net::evaluateNewParallel(double* newPopulation, int size, int dimensions, vector<SolutionFitness>& newPopulationFitnessMap, Dataset& dataset) {
-    if (d_newPopulation == nullptr) {
-        cudaMalloc((void **) &d_newPopulation, size * dimensions * sizeof(double));
-    }
-    cudaMemcpy(d_newPopulation, newPopulation, (size) * dimensions * sizeof(double),
-               cudaMemcpyHostToDevice);
-    newPopulationFitnessMap.clear();
-
-    for (int i = 0; i < size; i++) {
-        double fitness = evaluateParallel(&d_newPopulation[i * dimensions], dataset);
-        newPopulationFitnessMap.push_back(SolutionFitness(fitness, i));
-    }
-}
