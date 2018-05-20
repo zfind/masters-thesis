@@ -58,19 +58,7 @@ public:
 
 private:
 
-    void clonePopulation(vector<Solution> &clones);
-
-    void mutate(vector<Solution> &clones);
-
-    void select(vector<Solution> &mutated);
-
     void newClonedMutated();
-
-    void selectNewPopulation();
-
-    void create(vector<Solution> &solutions, int size);
-
-    void addNewSolutions(vector<Solution> &solutions);
 
     void newCreated();
 
