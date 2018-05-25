@@ -20,8 +20,17 @@
 using namespace std;
 
 
+#define BLOCK_SIZE 16
+
+
 extern "C"
 __global__ void mulMatrixKernel(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC);
+
+extern "C"
+__device__ inline double GetElement(double *matrix, int XX, int YY, int x, int y);
+
+extern "C"
+__device__ inline void SetElement(double *matrix, int XX, int YY, int x, int y, double val);
 
 
 class Net {
@@ -57,6 +66,10 @@ private:
     void mulMatrix(Matrix mA, int rA, int cA, Matrix mB, int rB, int cB, Matrix mC, int rC, int cC);
 
     void mulMatrix(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC);
+
+    inline double GetElement(double *matrix, int XX, int YY, int x, int y);
+
+    inline void SetElement(double *matrix, int XX, int YY, int x, int y, double val);
 
 };
 

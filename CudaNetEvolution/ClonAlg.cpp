@@ -66,7 +66,7 @@ Solution &ClonAlg::run() {
     }
 
     Solution &best = pickBest();
-    cout << "Rjesenje:\t" << best.first;
+    cout << "Rjesenje:\t" << best.first << endl;
 
     return best;
 }
@@ -92,7 +92,7 @@ Solution &ClonAlg::runParallel() {
     }
 
     Solution &best = pickBest();
-    cout << "Rjesenje:\t" << best.first;
+    cout << "Rjesenje:\t" << best.first << endl;
 
     return best;
 }

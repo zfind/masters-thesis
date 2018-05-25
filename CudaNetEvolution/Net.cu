@@ -109,12 +109,14 @@ double Net::evaluateGPU(double *weights, Dataset &dataset) {
         int new_breakpoint = breakpoint + rows * cols;
 
         // set up dimensions
-        dim3 dimGridN(dataset.SIZE, 1);
-        dim3 dimBlock(1, 1, 1);
+        dim3 dimGrid;
+        dimGrid.x = (cols + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        dimGrid.y = (dataset.SIZE + BLOCK_SIZE - 1) / BLOCK_SIZE;
+        dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
 
 
         if (i == 1) {
-            mulMatrixKernel<<<dimGridN, dimBlock>>>(
+            mulMatrixKernel<<<dimGrid, dimBlock>>>(
                     d_datasetInput, dataset.SIZE, dataset.INPUT_DIM,
                     &weights[breakpoint], rows, cols,
                     d_output, dataset.SIZE, cols
@@ -127,7 +129,7 @@ double Net::evaluateGPU(double *weights, Dataset &dataset) {
             int d_new_output_rows = dataset.SIZE;
             int d_new_output_cols = cols;
 
-            mulMatrixKernel<<<dimGridN, dimBlock>>>(
+            mulMatrixKernel<<<dimGrid, dimBlock>>>(
                     d_output, dataset.SIZE, d_output_cols,
                     &weights[breakpoint], rows, cols,
                     d_new_output, dataset.SIZE, cols
@@ -180,31 +182,72 @@ void Net::mulMatrix(Matrix mA, int rA, int cA, Matrix mB, int rB, int cB, Matrix
 }
 
 void Net::mulMatrix(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC) {
-    for (int i = 0; i < rA; i++) {
-        for (int j = 0; j < cB; j++) {
+    for (int y = 0; y < rA; y++) {
+        for (int x = 0; x < cB; x++) {
             double xx = 0.;
             for (int k = 0; k < rB - 1; k++) {
-                xx += mA[i * (cA) + k] * mB[k * cB + j];
+                xx += mA[y * (cA) + k] * mB[k * cB + x];
             }
-            xx += mB[(rB - 1) * cB + j];
+            xx += mB[(rB - 1) * cB + x];
             xx = 1. / (1. + exp(-1. * xx)); // sigmoid
-            mC[i * cC + j] = xx;
+            mC[y * cC + x] = xx;
         }
     }
 }
 
+/*
+void Net::mulMatrix(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC) {
+    for (int y = 0; y < rA; y++) {
+        for (int x = 0; x < cB; x++) {
+            double xx = 0.;
+            for (int k = 0; k < rB - 1; k++) {
+                double valA = GetElement(mA, cA, rA, k, y);
+                double valB = GetElement(mB, cB, rB, x, k);
+                xx += valA * valB;
+            }
+            xx += GetElement(mB, cB, rB, x, rB - 1);
+            xx = 1. / (1. + exp(-1. * xx)); // sigmoid
+            SetElement(mC, cC, rC, x, y, xx);
+        }
+    }
+}
+ */
+
+double Net::GetElement(double *matrix, int XX, int YY, int x, int y) {
+    return matrix[y * XX + x];
+}
+
+void Net::SetElement(double *matrix, int XX, int YY, int x, int y, double val) {
+    matrix[y * XX + x] = val;
+}
+
+
 extern "C"
 __global__ void mulMatrixKernel(double *mA, int rA, int cA, double *mB, int rB, int cB, double *mC, int rC, int cC) {
-    int i = blockIdx.x;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    for (int j = 0; j < cB; j++) {
-        double xx = 0.;
-        for (int k = 0; k < rB - 1; k++) {
-            xx += mA[i * (cA) + k] * mB[k * cB + j];
-        }
-        xx += mB[(rB - 1) * cB + j];
-        xx = 1. / (1. + exp(-1. * xx)); // sigmoid
-        mC[i * cC + j] = xx;
+    if (x >= cC || y >= rC) return;
+
+    double xx = 0.;
+    for (int k = 0; k < rB - 1; k++) {
+        double valA = GetElement(mA, cA, rA, k, y);
+        double valB = GetElement(mB, cB, rB, x, k);
+        xx += valA * valB;
     }
+    xx += GetElement(mB, cB, rB, x, rB - 1);
 
+    xx = 1. / (1. + exp(-1. * xx)); // sigmoid
+
+    SetElement(mC, cC, rC, x, y, xx);
+}
+
+extern "C"
+__device__ double GetElement(double *matrix, int XX, int YY, int x, int y) {
+    return matrix[y * XX + x];
+}
+
+extern "C"
+__device__ void SetElement(double *matrix, int XX, int YY, int x, int y, double val) {
+    matrix[y * XX + x] = val;
 }
