@@ -20,6 +20,7 @@
         <Entry desc="" key="mutation.indprob">0.3</Entry>
         <Entry desc="" key="population.size">500</Entry>
         <Entry desc="" key="term.stagnation">10</Entry>
+	<Entry key="term.maxgen">20</Entry>
 		<Entry desc="" key="term.fitnessval">0</Entry>
     </Registry>
 </ECF>

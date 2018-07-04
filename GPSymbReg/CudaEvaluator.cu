@@ -1,7 +1,15 @@
 #include <cmath>
 #include <stack>
-#include <chrono>
 #include <limits>
+#include <iostream>
+#include <vector>
+#include <stack>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <chrono>
+
+using namespace std;
 
 #include "CudaEvaluator.h"
 
@@ -10,112 +18,197 @@
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
 
 
-CudaEvaluator::CudaEvaluator(uint NUM_SAMPLES, uint INPUT_DIMENSION, uint MAX_PROG_SIZE,
-                             vector<vector<double>> &datasetInput, vector<double> &datasetOutput) :
-        NUM_SAMPLES(NUM_SAMPLES), INPUT_DIMENSION(INPUT_DIMENSION), MAX_PROG_SIZE(MAX_PROG_SIZE), datasetInput(datasetInput),
+CudaEvaluator::CudaEvaluator(const uint N_SAMPLES, const uint SAMPLE_DIMENSION, const uint MAX_PROGRAM_NODES,
+                             const vector<vector<double>> &datasetInput, const vector<double> &datasetOutput) :
+        N_SAMPLES(N_SAMPLES), SAMPLE_DIMENSION(SAMPLE_DIMENSION), MAX_PROGRAM_NODES(MAX_PROGRAM_NODES),
+        datasetInput(datasetInput),
         datasetOutput(datasetOutput) {
-    cudaMalloc((void **) &d_program, MAX_PROG_SIZE * sizeof(uint));
-    cudaMalloc((void **) &d_programConst, MAX_PROG_SIZE * sizeof(double));
-    cudaMalloc((void **) &d_datasetInput, NUM_SAMPLES * INPUT_DIMENSION * sizeof(double));
-    cudaMalloc((void **) &d_resultOutput, NUM_SAMPLES * sizeof(double));
-    cudaMalloc((void **) &d_globalStack, NUM_SAMPLES * MAX_PROG_SIZE * sizeof(double));
-    cudaMalloc((void **) &d_datasetOutput, NUM_SAMPLES * sizeof(double));
+
+    size_t BUFFER_MAX_PROGRAM_SIZE = (int) ((MAX_PROGRAM_NODES * sizeof(uint) + sizeof(double) - 1)
+                                            / sizeof(double))
+                                     * sizeof(double);
+    size_t BUFFER_MAX_CONSTANTS_SIZE = MAX_PROGRAM_NODES * sizeof(double);
+    size_t BUFFER_SIZE = BUFFER_MAX_PROGRAM_SIZE + BUFFER_MAX_CONSTANTS_SIZE;
+
+    cudaMalloc((void **) &d_program, BUFFER_SIZE);
+    cudaMalloc((void **) &d_datasetInput, N_SAMPLES * SAMPLE_DIMENSION * sizeof(double));
+    cudaMalloc((void **) &d_resultOutput, N_SAMPLES * sizeof(double));
+    cudaMalloc((void **) &d_datasetOutput, N_SAMPLES * sizeof(double));
     cudaMalloc((void **) &d_resultFitness, sizeof(double));
 
     //  copy input matrix to 1D array
-    double *h_input = new double[NUM_SAMPLES * INPUT_DIMENSION];
+    double *h_input = new double[N_SAMPLES * SAMPLE_DIMENSION];
     double *p_input = h_input;
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        copy(datasetInput[i].begin(), datasetInput[i].end(), p_input);
-        p_input += INPUT_DIMENSION;
+    for (int i = 0; i < N_SAMPLES; i++) {
+        std::copy(datasetInput[i].begin(), datasetInput[i].end(), p_input);
+        p_input += SAMPLE_DIMENSION;
     }
 
-    cudaMemcpy(d_datasetInput, h_input, NUM_SAMPLES * INPUT_DIMENSION * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_datasetOutput, &datasetOutput[0], NUM_SAMPLES * sizeof(double), cudaMemcpyHostToDevice);
-
-    cudaMallocHost((void **) &postfixMemPinned, MAX_PROG_SIZE * (sizeof(uint) + sizeof(double)));
+    cudaMemcpy(d_datasetInput, h_input, N_SAMPLES * SAMPLE_DIMENSION * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_datasetOutput, &datasetOutput[0], N_SAMPLES * sizeof(double), cudaMemcpyHostToDevice);
 
     delete[] h_input;
 }
 
 CudaEvaluator::~CudaEvaluator() {
     cudaFree(d_program);
-    cudaFree(d_programConst);
     cudaFree(d_datasetInput);
     cudaFree(d_resultOutput);
-    //cudaFree(d_globalStack);
-    //cudaFree(d_datasetOutput);
-    //cudaFree(d_resultFitness);
+    cudaFree(d_datasetOutput);
+    cudaFree(d_resultFitness);
 }
 
-double CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                                 vector<double> &result) {
+double CudaEvaluator::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result) {
+    result.resize(N_SAMPLES, 0.);
 
-    cudaMemcpy(d_program, postfixMem, PROG_SIZE * sizeof(uint), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_programConst, postfixMem + PROG_SIZE * sizeof(uint), CONST_SIZE * sizeof(double),
-               cudaMemcpyHostToDevice);
+    double fitness = 0.;
+    for (int i = 0; i < N_SAMPLES; i++) {
+        result[i] = h_evaluateIndividual(buffer, PROGRAM_SIZE, datasetInput[i]);
+        fitness += fabs(datasetOutput[i] - result[i]);
+    }
+
+    return fitness;
+}
+
+double CudaEvaluator::h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, std::vector<double> &input) {
+
+    uint *program = reinterpret_cast<uint *>(buffer);
+
+    size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
+                                        / sizeof(double))
+                                 * sizeof(double);
+    double *programConstants = reinterpret_cast<double *>(buffer + BUFFER_PROGRAM_SIZE);
+
+
+    double stack[PROGRAM_SIZE];
+
+    int SP = 0;
+    double o1, o2, tmp;
+
+    for (int i = 0; i < PROGRAM_SIZE; i++) {
+
+        if (program[i] >= ARITY_2) {
+            o2 = stack[--SP];
+            o1 = stack[--SP];
+
+            switch (program[i]) {
+                case ADD:
+                    tmp = o1 + o2;
+                    break;
+                case SUB:
+                    tmp = o1 - o2;
+                    break;
+                case MUL:
+                    tmp = o1 * o2;
+                    break;
+                case DIV:
+                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                    break;
+                default:
+                    CPU_EVALUATE_ERROR
+            }
+
+        } else if (program[i] >= ARITY_1) {
+            o1 = stack[--SP];
+
+            switch (program[i]) {
+                case SQR:
+                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                    break;
+                case SIN:
+                    tmp = sin(o1);
+                    break;
+                case COS:
+                    tmp = cos(o1);
+                    break;
+                default:
+                    CPU_EVALUATE_ERROR
+            }
+
+        } else if (program[i] == CONST) {
+            tmp = *programConstants;
+            programConstants++;
+
+        } else if (program[i] >= VAR && program[i] < CONST) {
+            uint code = program[i];
+            uint idx = code - VAR;
+            tmp = input[idx];
+
+        } else {
+            CPU_EVALUATE_ERROR
+        }
+
+        stack[SP++] = tmp;
+    }
+
+    double result = stack[--SP];
+    return result;
+}
+
+
+double CudaEvaluator::d_evaluate(char *buffer, uint PROGRAM_SIZE, vector<double> &result) {
+
+    size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
+                                        / sizeof(double))
+                                 * sizeof(double);
+    size_t BUFFER_CONSTANTS_SIZE = PROGRAM_SIZE * sizeof(double);
+    size_t BUFFER_SIZE = BUFFER_PROGRAM_SIZE + BUFFER_CONSTANTS_SIZE;
+
+    cudaMemcpy(d_program, buffer, BUFFER_SIZE, cudaMemcpyHostToDevice);
 
     dim3 block(THREADS_IN_BLOCK, 1);
-    dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
-    size_t SHARED_MEM_SIZE = PROG_SIZE * sizeof(uint);
+    dim3 grid((N_SAMPLES + block.x - 1) / block.x, 1);
+    size_t SHARED_MEM_SIZE = PROGRAM_SIZE * sizeof(uint);
 
-    d_evaluateIndividual <<<grid, block, SHARED_MEM_SIZE>>>(d_program, d_programConst,
-            d_datasetInput, d_datasetOutput, d_resultOutput, d_globalStack, d_resultFitness,
-            NUM_SAMPLES, INPUT_DIMENSION, PROG_SIZE);
+    d_evaluateIndividualKernel<<<grid, block, SHARED_MEM_SIZE>>>(
+            d_program, PROGRAM_SIZE, BUFFER_PROGRAM_SIZE,
+            d_datasetInput, d_datasetOutput,
+            d_resultOutput, d_resultFitness,
+            N_SAMPLES, SAMPLE_DIMENSION
+    );
 
 
-//    result.resize(NUM_SAMPLES, 0.);
-//    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(double), cudaMemcpyDeviceToHost);
+//    result.resize(N_SAMPLES, 0.);
+//    cudaMemcpy(&result[0], d_resultOutput, N_SAMPLES * sizeof(double), cudaMemcpyDeviceToHost);
 
     double fitness = 0.;
     cudaMemcpy(&fitness, d_resultFitness, sizeof(double), cudaMemcpyDeviceToHost);
-//    for (int i = 0; i < NUM_SAMPLES; i++) {
-//        fitness += fabs(datasetOutput[i] - result[i]);
-//    }
 
     return fitness;
 }
 
 
-__global__ void d_evaluateIndividual(uint *d_program,
-                                     double *d_programConst,
-                                     double *d_datasetInput,
-                                     double *d_datasetOutput,
-                                     double *d_resultOutput,
-                                     double *d_globalStack,
-                                     double *d_resultFitness,
-                                     int N, int DIM, int PROG_SIZE) {
+__global__ void d_evaluateIndividualKernel(uint *d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
+                                           double *d_datasetInput, double *d_datasetOutput,
+                                           double *d_resultOutput, double *d_resultFitness,
+                                           int N_SAMPLES, int SAMPLE_DIMENSION) {
 
     uint tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid == 0) *d_resultFitness = 0.;
 
     extern __shared__ uint shared_programCache[];
-    for (uint idx = threadIdx.x; idx < PROG_SIZE; idx += THREADS_IN_BLOCK) {
+    for (uint idx = threadIdx.x; idx < PROGRAM_SIZE; idx += THREADS_IN_BLOCK) {
         shared_programCache[idx] = d_program[idx];
     }
 
     __syncthreads();
 
-    if (tid >= N) return;
+    if (tid >= N_SAMPLES) return;
 
 
-    // in global memory, slow
-//    double *stack = d_globalStack + tid * PROG_SIZE;
-    // in local, faster
-     double stack[MAX_STACK_SIZE];
+    // in registers or local memory, faster than global
+    double stack[MAX_STACK_SIZE];
 
-    //  stack in low latency shared memory
-//    extern __shared__ double stackChunk[];
-//    double *stack = stackChunk + threadIdx.x * PROG_SIZE;
+    double *inputSample = d_datasetInput + tid * SAMPLE_DIMENSION;
 
-    double *inputSample = d_datasetInput + tid * DIM;
+    double *d_programConst = (double *) ((char *) (d_program) + BUFFER_PROGRAM_SIZE);
 
     int SP = 0;
     double o1, o2, tmp;
     uint code, idx;
 
-    for (int i = 0; i < PROG_SIZE; i++) {
+    for (int i = 0; i < PROGRAM_SIZE; i++) {
 
         if (shared_programCache[i] >= ARITY_2) {
             o2 = stack[--SP];
@@ -175,104 +268,7 @@ __global__ void d_evaluateIndividual(uint *d_program,
 
     d_resultOutput[tid] = result;
 
-    // slow reduction
-    /*
-    __syncthreads();
-    if (tid == 0) {
-        result=0.;
-        #pragma unroll
-        for (uint i = 0; i < N; i++) {
-            result += fabs(d_datasetOutput[i] - d_resultOutput[i]);
-        }
-        *d_resultFitness = result;
-    } */
-
     result = fabs(d_datasetOutput[tid] - result);
 
     atomicAdd(d_resultFitness, result);
-}
-
-
-double CudaEvaluator::h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                                           std::vector<double> &input) {
-
-    uint *program = (uint *) postfixMem;
-    double *programConst = (double *) &program[PROG_SIZE];
-
-    double stack[PROG_SIZE];
-
-    int SP = 0;
-    double o1, o2, tmp;
-
-    for (int i = 0; i < PROG_SIZE; i++) {
-
-        if (program[i] >= ARITY_2) {
-            o2 = stack[--SP];
-            o1 = stack[--SP];
-
-            switch (program[i]) {
-                case ADD:
-                    tmp = o1 + o2;
-                    break;
-                case SUB:
-                    tmp = o1 - o2;
-                    break;
-                case MUL:
-                    tmp = o1 * o2;
-                    break;
-                case DIV:
-                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
-                    break;
-                default:
-                    CPU_EVALUATE_ERROR
-            }
-
-        } else if (program[i] >= ARITY_1) {
-            o1 = stack[--SP];
-
-            switch (program[i]) {
-                case SQR:
-                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
-                    break;
-                case SIN:
-                    tmp = sin(o1);
-                    break;
-                case COS:
-                    tmp = cos(o1);
-                    break;
-                default:
-                    CPU_EVALUATE_ERROR
-            }
-
-        } else if (program[i] == CONST) {
-            tmp = *programConst;
-            programConst++;
-
-        } else if (program[i] >= VAR && program[i] < CONST) {
-            uint code = program[i];
-            uint idx = code - VAR;
-            tmp = input[idx];
-
-        } else {
-            CPU_EVALUATE_ERROR
-        }
-
-        stack[SP++] = tmp;
-    }
-
-    double result = stack[--SP];
-    return result;
-}
-
-
-double CudaEvaluator::h_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE, std::vector<double> &result) {
-    result.resize(NUM_SAMPLES, 0.);
-
-    double fitness = 0.;
-    for (int i = 0; i < NUM_SAMPLES; i++) {
-        result[i] = h_evaluateIndividual(postfixMem, PROG_SIZE, CONST_SIZE, datasetInput[i]);
-        fitness += fabs(datasetOutput[i] - result[i]);
-    }
-
-    return fitness;
 }
