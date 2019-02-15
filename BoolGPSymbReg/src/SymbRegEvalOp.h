@@ -6,7 +6,7 @@
 #define SymbRegEvalOp_h
 
 #include <cfloat>
-#include <ecf/ECF.h>
+#include <ECF/ECF.h>
 #include "Primitives.cpp"
 #include "CudaEvaluator.h"
 

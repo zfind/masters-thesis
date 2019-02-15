@@ -1,7 +1,7 @@
 #ifndef Primitives_h
 #define Primitives_h
 
-#include "ecf/ECF.h"
+#include "ECF/ECF.h"
 
 
 // custom terminal class - boolean vector

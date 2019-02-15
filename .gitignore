@@ -39,3 +39,9 @@ GPSymbReg/input.txt
 GPSymbReg/log.txt
 GPSymbReg/m.txt
 
+# BoolGPSymbReg
+BoolGPSymbReg/BoolGPSymbReg
+BoolGPSymbReg/build/
+BoolGPSymbReg/input.txt
+BoolGPSymbReg/log.txt
+BoolGPSymbReg/m.txt
