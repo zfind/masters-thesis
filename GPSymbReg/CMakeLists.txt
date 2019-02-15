@@ -16,16 +16,16 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
 )
 
 set(SOURCE_FILES
-        main.cpp
-        SymbRegEvalOp.cpp
-        SymbRegEvalOp.h
-        Constants.h
-        CudaEvaluator.h
+    src/main.cpp
+    src/SymbRegEvalOp.h
+    src/SymbRegEvalOp.cpp
+    src/Constants.h
+    src/CudaEvaluator.h
 )
 
 add_subdirectory(lib/ECF)
 
-cuda_add_library(CudaEvaluator_o CudaEvaluator.cu)
+cuda_add_library(CudaEvaluator_o src/CudaEvaluator.cu)
 
 cuda_add_executable(GPSymbReg ${SOURCE_FILES})
 
