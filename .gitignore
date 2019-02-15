@@ -35,13 +35,15 @@
 # GPSymbReg
 GPSymbReg/GPSymbReg
 GPSymbReg/build/
-GPSymbReg/input.txt
 GPSymbReg/log.txt
 GPSymbReg/m.txt
+GPSymbReg/data/input.txt
+
 
 # BoolGPSymbReg
 BoolGPSymbReg/BoolGPSymbReg
 BoolGPSymbReg/build/
-BoolGPSymbReg/input.txt
 BoolGPSymbReg/log.txt
 BoolGPSymbReg/m.txt
+BoolGPSymbReg/data/input.txt
+

@@ -97,7 +97,7 @@ bool SymbRegEvalOp::initialize(StateP state) {
     uint BUFFER_SIZE = MAX_PROGRAM_SIZE * (sizeof(uint) + sizeof(double));
     postfixBuffer = new char[BUFFER_SIZE];
 
-    loadFromFile("input.txt", datasetInput, codomain);
+    loadFromFile("data/input.txt", datasetInput, codomain);
 
     Tree::Tree* tree = (Tree::Tree*) state->getGenotypes().at(0).get();
     // zadaj vrijednosti obicnim varijablama (ne mijenjaju se tijekom evolucije!)

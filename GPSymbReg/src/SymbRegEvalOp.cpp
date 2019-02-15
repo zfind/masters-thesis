@@ -137,7 +137,7 @@ bool SymbRegEvalOp::initialize(StateP state) {
 
     programBuffer = new char[BUFFER_SIZE];
 
-    loadFromFile("input.txt", datasetInput, codomain);
+    loadFromFile("data/input.txt", datasetInput, codomain);
 
     N_SAMPLES = datasetInput.size();
     uint SAMPLE_DIMENSION = datasetInput[0].size();
