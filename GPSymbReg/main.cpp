@@ -1,4 +1,4 @@
-#include <ecf/ECF.h>
+#include <ECF/ECF.h>
 #include "SymbRegEvalOp.h"
 
 int main(int argc, char **argv) {

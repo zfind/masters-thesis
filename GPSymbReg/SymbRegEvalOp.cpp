@@ -1,5 +1,5 @@
 #include <cmath>
-#include <ecf/ECF.h>
+#include <ECF/ECF.h>
 #include <stack>
 #include <chrono>
 #include <limits>

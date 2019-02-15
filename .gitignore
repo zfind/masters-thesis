@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+
+# GPSymbReg
+GPSymbReg/GPSymbReg
+GPSymbReg/build/
+GPSymbReg/input.txt
+GPSymbReg/log.txt
+GPSymbReg/m.txt
+
