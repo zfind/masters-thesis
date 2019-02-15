@@ -3,6 +3,7 @@
 #include "SelRandomOp.h"
 #include "SelWorstOp.h"
 #include <cfloat>
+#include <cmath>
 
 
 AlgNSGA2::AlgNSGA2() 
@@ -91,7 +92,7 @@ int AlgNSGA2::checkDominance(MOFitnessP fitness1, MOFitnessP fitness2)
 	for (uint i = 0; i<size; i++) {
 		FitnessP f1 = fitness1->at(i);
 		FitnessP f2 = fitness2->at(i);
-		if (abs(f1->getValue() - f2->getValue()) > DBL_EPSILON) {
+		if (fabs(f1->getValue() - f2->getValue()) > DBL_EPSILON) {
 			if (dominance == 0) {
 				if (f1->isBetterThan(f2)) {
 					dominance = -1;
