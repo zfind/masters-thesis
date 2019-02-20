@@ -25,8 +25,6 @@ private:
 
     char *programBuffer;
 
-    void convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM_SIZE);
-
     uint *d_program;
     double *d_datasetInput;
     double *d_datasetOutput;

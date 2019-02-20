@@ -27,8 +27,6 @@ private:
 
     char *programBuffer;
 
-    void convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM_SIZE);
-
     long conversionTime, cpuTime;
 };
 
