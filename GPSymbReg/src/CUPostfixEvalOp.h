@@ -1,9 +1,4 @@
-//
-// Created by zac on 19.02.19..
-//
-
-#ifndef GPSYMBREG_CUPOSTFIXEVALOP_H
-#define GPSYMBREG_CUPOSTFIXEVALOP_H
+#pragma once
 
 #include <ECF/ECF.h>
 #include "Dataset.h"
@@ -17,11 +12,10 @@ public:
 
     FitnessP evaluate(IndividualP individual) override;
 
-
 private:
-
     double d_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result);
 
+private:
     std::shared_ptr<Dataset> dataset;
 
     char *programBuffer;
@@ -34,6 +28,3 @@ private:
 
     long conversionTime, gpuTime;
 };
-
-
-#endif //GPSYMBREG_CUPOSTFIXEVALOP_H

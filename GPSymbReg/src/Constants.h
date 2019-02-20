@@ -1,5 +1,4 @@
-#ifndef GPSYMBREG_CONSTANTS_H
-#define GPSYMBREG_CONSTANTS_H
+#pragma once
 
 
 #define DOUBLE_EQUALS       1E-4
@@ -31,6 +30,3 @@
 
 
 #define ERR     0xFFFFFFFF
-
-
-#endif //GPSYMBREG_CONSTANTS_H

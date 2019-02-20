@@ -1,14 +1,12 @@
-//
-// Created by zac on 18.02.19..
-//
-
 #include "Dataset.h"
+
 #include <fstream>
 #include <iostream>
+
 using std::vector;
 
 
-Dataset::Dataset(const std::string& filename) {
+Dataset::Dataset(const std::string &filename) {
     loadFromFile(filename);
 }
 
@@ -20,7 +18,7 @@ int Dataset::size() const {
     return N_SIZE;
 }
 
-const std::vector<double>& Dataset::getSampleInput(int i) const {
+const std::vector<double> &Dataset::getSampleInput(int i) const {
     return datasetInput[i];
 }
 
@@ -28,7 +26,7 @@ double Dataset::getSampleOutput(int i) const {
     return codomain[i];
 }
 
-void Dataset::loadFromFile(const std::string& filename) {
+void Dataset::loadFromFile(const std::string &filename) {
     std::ifstream in(filename);
 
     if (!in) {

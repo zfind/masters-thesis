@@ -1,14 +1,11 @@
-//
-// Created by zac on 18.02.19..
-//
-
 #include "PostfixEvaluator.h"
+
+#include <chrono>
+#include <stack>
 #include "Constants.h"
 #include "Utils.h"
-#include <memory>
-#include <chrono>
-#include <iostream>
-#include <stack>
+
+
 using namespace std;
 
 // put "DBG(x) x" to enable debug printout
@@ -34,7 +31,6 @@ bool PostfixEvaluator::initialize(StateP state) {
 
     return true;
 }
-
 
 
 FitnessP PostfixEvaluator::evaluate(IndividualP individual) {

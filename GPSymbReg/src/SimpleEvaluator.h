@@ -1,16 +1,11 @@
-//
-// Created by zac on 18.02.19..
-//
-
-#ifndef GPSYMBREG_SIMPLEEVALUATOR_H
-#define GPSYMBREG_SIMPLEEVALUATOR_H
+#pragma  once
 
 #include <vector>
 #include <ECF/ECF.h>
 #include "Dataset.h"
 
 
-class SimpleEvaluator : public EvaluateOp{
+class SimpleEvaluator : public EvaluateOp {
 public:
     ~SimpleEvaluator() override;
 
@@ -23,6 +18,3 @@ private:
 
     long ecfTime;
 };
-
-
-#endif //GPSYMBREG_SIMPLEEVALUATOR_H

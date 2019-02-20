@@ -1,9 +1,6 @@
-//
-// Created by zac on 18.02.19..
-//
+#include "SimpleEvaluator.h"
 
 #include <chrono>
-#include "SimpleEvaluator.h"
 
 // called only once, before the evolution  generates training data
 bool SimpleEvaluator::initialize(StateP state) {

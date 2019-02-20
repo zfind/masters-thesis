@@ -1,12 +1,13 @@
+#include "CUPostfixEvalOp.h"
+
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include "Constants.h"
-#include "CUPostfixEvalOp.h"
 
 
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
 
-
+extern "C"
 __global__ void d_evaluateIndividualKernel(uint *d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
                                            double *d_datasetInput, double *d_datasetOutput,
                                            double *d_resultOutput, double *d_resultFitness,

@@ -1,13 +1,8 @@
-//
-// Created by zac on 18.02.19..
-//
+#include "BenchmarkOp.h"
 
 #include <chrono>
-#include "BenchmarkOp.h"
 #include "Constants.h"
-#include "SimpleEvaluator.h"
-#include "PostfixEvaluator.h"
-#include "CUPostfixEvalOp.h"
+
 
 // called only once, before the evolution  generates training data
 bool BenchmarkOp::initialize(StateP state) {
@@ -27,7 +22,6 @@ bool BenchmarkOp::initialize(StateP state) {
 
 
 FitnessP BenchmarkOp::evaluate(IndividualP individual) {
-
     //  number of digits in double print
     cerr.precision(std::numeric_limits<double>::max_digits10);
 
@@ -56,13 +50,15 @@ FitnessP BenchmarkOp::evaluate(IndividualP individual) {
     gpuTime += diff;
 
 
-
-    if (fabs(h_fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
-        cerr << "WARN Host-device difference\t" << "host:\t" << h_fitness->getValue() << "\tdev:\t" << d_fitness->getValue() << "\tdiff:\t"
+    if (fabs(h_fitness->getValue() - d_fitness->getValue()) >
+        DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
+        cerr << "WARN Host-device difference\t" << "host:\t" << h_fitness->getValue() << "\tdev:\t"
+             << d_fitness->getValue() << "\tdiff:\t"
              << fabs(h_fitness->getValue() - d_fitness->getValue()) << endl;
     }
     if (fabs(fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
-        cerr << "WARN ECF-device difference\t" << "ecf:\t" << fitness->getValue() << "host:\t" << h_fitness->getValue() << "\tdev:\t" << d_fitness->getValue()
+        cerr << "WARN ECF-device difference\t" << "ecf:\t" << fitness->getValue() << "host:\t" << h_fitness->getValue()
+             << "\tdev:\t" << d_fitness->getValue()
              << "\tdiff:\t"
              << fabs(fitness->getValue() - d_fitness->getValue()) << endl;
     }
@@ -72,10 +68,13 @@ FitnessP BenchmarkOp::evaluate(IndividualP individual) {
 
 BenchmarkOp::~BenchmarkOp() {
     cerr.precision(7);
+
     cerr << "===== STATS [us] =====" << endl;
+
     cerr << "ECF time:\t" << ecfTime << endl;
     cerr << "CPU time:\t" << cpuTime << endl;
     cerr << "GPU time:\t" << gpuTime << endl;
+
     cerr << "CPU vs ECF:\t" << (double) ecfTime / cpuTime << endl;
     cerr << "GPU vs CPU:\t" << (double) cpuTime / gpuTime << endl;
     cerr << "GPU vs ECF:\t" << (double) ecfTime / gpuTime << endl;

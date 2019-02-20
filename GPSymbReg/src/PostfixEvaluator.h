@@ -1,9 +1,4 @@
-//
-// Created by zac on 18.02.19..
-//
-
-#ifndef GPSYMBREG_POSTFIXEVALUATOR_H
-#define GPSYMBREG_POSTFIXEVALUATOR_H
+#pragma once
 
 #include "ECF/ECF.h"
 #include "Dataset.h"
@@ -17,6 +12,8 @@ public:
 
     FitnessP evaluate(IndividualP individual) override;
 
+
+private:
     double h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result);
 
     double h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, const std::vector<double> &input);
@@ -29,6 +26,3 @@ private:
 
     long conversionTime, cpuTime;
 };
-
-
-#endif //GPSYMBREG_POSTFIXEVALUATOR_H

@@ -1,9 +1,5 @@
 #include <memory>
 #include <ECF/ECF.h>
-#include "Dataset.h"
-#include "SimpleEvaluator.h"
-#include "PostfixEvaluator.h"
-#include "CUPostfixEvalOp.h"
 #include "BenchmarkOp.h"
 
 

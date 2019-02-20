@@ -1,10 +1,8 @@
-//
-// Created by zac on 18.02.19..
-//
-
 #include "Utils.h"
+
 #include <stack>
 #include "Constants.h"
+
 using namespace std;
 
 #define DBG(x)
@@ -14,9 +12,9 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     DBG(
             uint nTrees = (uint) individual->size();
-    if (nTrees != 1) {
-        cerr << "more than one tree in genotype" << endl;
-    }
+            if (nTrees != 1) {
+                cerr << "more than one tree in genotype" << endl;
+            }
     )
 
     TreeP pTree = boost::dynamic_pointer_cast<Tree::Tree>(individual->getGenotype(0));
@@ -25,11 +23,11 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     //  prefix print
     DBG(
-    for (int i = 0; i < PROGRAM_SIZE; i++) {
-        string primName = (*pTree)[i]->primitive_->getName();
-        cerr << primName << " ";
-    }
-    cerr << endl;
+            for (int i = 0; i < PROGRAM_SIZE; i++) {
+                string primName = (*pTree)[i]->primitive_->getName();
+                cerr << primName << " ";
+            }
+            cerr << endl;
     )
 
     //  convert to postfix
@@ -60,11 +58,11 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     //  postfix ispis
     DBG(
-    for (int i = 0; i < result.size(); i++) {
-        string pName = (*pTree)[result[i]]->primitive_->getName();
-        cerr << pName << " ";
-    }
-    cerr << endl;
+            for (int i = 0; i < result.size(); i++) {
+                string pName = (*pTree)[result[i]]->primitive_->getName();
+                cerr << pName << " ";
+            }
+            cerr << endl;
     )
 
 
@@ -72,7 +70,8 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     uint *program = reinterpret_cast<uint *>( buffer);
 
-    size_t CONSTANTS_OFFSET = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1) / sizeof(double)) * sizeof(double);
+    size_t CONSTANTS_OFFSET =
+            (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1) / sizeof(double)) * sizeof(double);
     double *programConstants = reinterpret_cast<double *>(buffer + CONSTANTS_OFFSET);
 
 

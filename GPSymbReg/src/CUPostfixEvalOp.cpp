@@ -1,25 +1,17 @@
-//
-// Created by zac on 19.02.19..
-//
-
 #include "CUPostfixEvalOp.h"
+
 #include "Constants.h"
-#include <memory>
 #include <chrono>
-#include <iostream>
 #include <stack>
-#include <cuda.h>
 #include <cuda_runtime_api.h>
-#include <vector>
-#include "Dataset.h"
 #include "Utils.h"
+
 using namespace std;
 
 // put "DBG(x) x" to enable debug printout
 #define DBG(x)
 #define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
-
 
 
 extern "C"

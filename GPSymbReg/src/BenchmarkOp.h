@@ -1,20 +1,12 @@
-//
-// Created by zac on 19.02.19..
-//
+#pragma once
 
-#ifndef GPSYMBREG_BENCHMARKOP_H
-#define GPSYMBREG_BENCHMARKOP_H
-
-#include <vector>
 #include <ECF/ECF.h>
-#include "Dataset.h"
-
-class SimpleEvaluator;
-class PostfixEvaluator;
-class CUPostfixEvalOp;
+#include "SimpleEvaluator.h"
+#include "PostfixEvaluator.h"
+#include "CUPostfixEvalOp.h"
 
 
-class BenchmarkOp : public EvaluateOp{
+class BenchmarkOp : public EvaluateOp {
 public:
     ~BenchmarkOp() override;
 
@@ -30,5 +22,3 @@ private:
     long ecfTime, cpuTime, gpuTime;
 };
 
-
-#endif //GPSYMBREG_BENCHMARKOP_H
