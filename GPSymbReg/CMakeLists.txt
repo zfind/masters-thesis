@@ -24,6 +24,7 @@ set(SOURCE_FILES
         src/PostfixEvaluator.h
         src/PostfixEvaluator.cpp
         src/CUPostfixEvalOp.h
+        src/CUPostfixEvalOp.cpp
         src/CUPostfixEvalOp.cu
         src/BenchmarkOp.h
         src/BenchmarkOp.cpp

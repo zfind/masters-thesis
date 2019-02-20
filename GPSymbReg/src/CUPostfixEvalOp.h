@@ -6,8 +6,8 @@
 #define GPSYMBREG_CUPOSTFIXEVALOP_H
 
 #include <ECF/ECF.h>
-#include <host_defines.h>
 #include "Dataset.h"
+
 
 class CUPostfixEvalOp : public EvaluateOp {
 public:
@@ -17,10 +17,11 @@ public:
 
     FitnessP evaluate(IndividualP individual) override;
 
-    double d_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result);
-
 
 private:
+
+    double d_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result);
+
     std::shared_ptr<Dataset> dataset;
 
     char *programBuffer;
@@ -33,13 +34,6 @@ private:
 
     long conversionTime, gpuTime;
 };
-
-
-extern "C"
-__global__ void d_evaluateIndividualKernel(uint *d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
-                                           double *d_datasetInput, double *d_datasetOutput,
-                                           double *d_resultOutput, double *d_resultFitness,
-                                           int N_SAMPLES, int SAMPLE_DIMENSION);
 
 
 #endif //GPSYMBREG_CUPOSTFIXEVALOP_H
