@@ -35,6 +35,7 @@
 # GPSymbReg
 GPSymbReg/GPSymbReg
 GPSymbReg/build/
+GPSymbReg/cmake-build-debug/
 GPSymbReg/log.txt
 GPSymbReg/m.txt
 GPSymbReg/data/input.txt
