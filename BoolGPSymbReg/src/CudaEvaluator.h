@@ -1,63 +1,31 @@
-//
-// Created by zac on 01.05.18..
-//
+#pragma once
 
-#ifndef BOOLGPSYMBREG_CUDAEVALUATOR_H
-#define BOOLGPSYMBREG_CUDAEVALUATOR_H
 
-#include <iostream>
-#include <vector>
-#include <stack>
-#include <cstdlib>
-#include <ctime>
-#include <cmath>
-#include <fstream>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include <chrono>
+#include <ECF/ECF.h>
+#include "Dataset.h"
 #include "Constants.h"
 
-using namespace std;
-
-class CudaEvaluator {
+class CudaEvaluator : public EvaluateOp {
 public:
-    CudaEvaluator(uint NUM_SAMPLES, uint INPUT_DIMENSION, uint MAX_PROG_SIZE,
-                  vector<vector<bool>> &datasetInput, vector<bool> &datasetOutput);
+    ~CudaEvaluator() override;
 
-    ~CudaEvaluator();
+    bool initialize(StateP state) override;
 
-    uint h_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                      vector<BOOL_TYPE> &result);
-
-    uint d_evaluate(char *postfixMem, uint PROG_SIZE, uint CONST_SIZE,
-                      vector<BOOL_TYPE> &result);
+    FitnessP evaluate(IndividualP individual) override;
 
 private:
-
-    BOOL_TYPE h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, uint MEM_SIZE,
-                                std::vector<BOOL_TYPE> &input);
+    uint d_evaluate(char *postfixMem, uint PROG_SIZE, vector<BOOL_TYPE> &result);
 
 private:
-    int NUM_SAMPLES;
-    int INPUT_DIMENSION;
-    int MAX_PROG_SIZE;
+    std::shared_ptr<Dataset> dataset;
 
-    std::vector<std::vector<BOOL_TYPE>> datasetInput;
-    std::vector<BOOL_TYPE> datasetOutput;
+    char *programBuffer;
 
     uint *d_program;
     BOOL_TYPE *d_datasetInput;
     BOOL_TYPE *d_datasetOutput;
     BOOL_TYPE *d_resultOutput;
     uint *d_resultFitness;
+
+    long conversionTime, gpuTime;
 };
-
-__global__ void d_evaluateIndividual(uint *d_program,
-                                     BOOL_TYPE *d_datasetInput,
-                                     BOOL_TYPE *d_datasetOutput,
-                                     BOOL_TYPE *d_resultOutput,
-                                     uint *d_resultFitness,
-                                     int N, int DIM, int PROG_SIZE);
-
-
-#endif //BOOLGPSYMBREG_CUDAEVALUATOR_H

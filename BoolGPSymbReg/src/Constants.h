@@ -1,5 +1,5 @@
-#ifndef GPSYMBREG_CONSTANTS_H
-#define GPSYMBREG_CONSTANTS_H
+#pragma once
+
 
 typedef unsigned char BOOL_TYPE;
 
@@ -33,6 +33,3 @@ typedef unsigned char BOOL_TYPE;
 
 
 #define ERR         0xFFFFFFFF
-
-
-#endif //GPSYMBREG_CONSTANTS_H

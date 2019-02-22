@@ -1,41 +1,20 @@
-//
-// Created by zac on 01.05.18..
-//
+#pragma  once
 
-#ifndef SymbRegEvalOp_h
-#define SymbRegEvalOp_h
-
-#include <cfloat>
+#include <vector>
 #include <ECF/ECF.h>
-#include "Primitives.cpp"
-#include "CudaEvaluator.h"
+#include "Dataset.h"
 
 
 class SymbRegEvalOp : public EvaluateOp {
 public:
-    FitnessP evaluate(IndividualP individual) override;
+    ~SymbRegEvalOp() override;
 
     bool initialize(StateP) override;
 
-    ~SymbRegEvalOp() override;
+    FitnessP evaluate(IndividualP individual) override;
 
 private:
-    uint NUM_SAMPLES;
-    std::vector<std::vector<bool>> datasetInput;
-    std::vector<std::vector<bool>> domain;
-    std::vector<bool> codomain;
-    void loadFromFile(std::string filename, std::vector<std::vector<bool>> &matrix, std::vector<bool> &output);
+    std::shared_ptr<Dataset> dataset;
 
-    char *postfixBuffer;
-    void convertToPostfixNew(IndividualP individual, char *postfixMem, uint &PROG_SIZE, uint &MEM_SIZE);
-
-    CudaEvaluator *evaluator;
-
-    long conversionTime, ecfTime, cpuTime, gpuTime;
+    long ecfTime;
 };
-
-typedef boost::shared_ptr<SymbRegEvalOp> SymbRegEvalOpP;
-
-
-
-#endif // SymbRegEvalOp_h

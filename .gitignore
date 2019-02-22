@@ -44,6 +44,7 @@ GPSymbReg/data/input.txt
 # BoolGPSymbReg
 BoolGPSymbReg/BoolGPSymbReg
 BoolGPSymbReg/build/
+BoolGPSymbReg/cmake-build-debug/
 BoolGPSymbReg/log.txt
 BoolGPSymbReg/m.txt
 BoolGPSymbReg/data/input.txt
