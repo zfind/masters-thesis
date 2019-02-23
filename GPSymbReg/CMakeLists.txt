@@ -19,15 +19,15 @@ set(SOURCE_FILES
         src/Constants.h
         src/Dataset.h
         src/Dataset.cpp
-        src/SimpleEvaluator.h
-        src/SimpleEvaluator.cpp
+        src/SymbRegEvalOp.h
+        src/SymbRegEvalOp.cpp
         src/Utils.h
         src/Utils.cpp
-        src/PostfixEvaluator.h
-        src/PostfixEvaluator.cpp
-        src/CUPostfixEvalOp.h
-        src/CUPostfixEvalOp.cpp
-        src/CUPostfixEvalOp.cu
+        src/CpuPostfixEvalOp.h
+        src/CpuPostfixEvalOp.cpp
+        src/CudaPostfixEvalOp.h
+        src/CudaPostfixEvalOp.cpp
+        src/CudaPostfixEvalOp.cu
         src/BenchmarkOp.h
         src/BenchmarkOp.cpp
 )

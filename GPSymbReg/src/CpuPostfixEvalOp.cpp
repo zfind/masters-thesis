@@ -1,4 +1,4 @@
-#include "PostfixEvaluator.h"
+#include "CpuPostfixEvalOp.h"
 
 #include <chrono>
 #include <stack>
@@ -14,7 +14,7 @@ using namespace std;
 
 
 // called only once, before the evolution  generates training data
-bool PostfixEvaluator::initialize(StateP state) {
+bool CpuPostfixEvalOp::initialize(StateP state) {
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
                                         / sizeof(double))
@@ -33,7 +33,7 @@ bool PostfixEvaluator::initialize(StateP state) {
 }
 
 
-FitnessP PostfixEvaluator::evaluate(IndividualP individual) {
+FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual) {
 
     //  number of digits in double print
     cerr.precision(std::numeric_limits<double>::max_digits10);
@@ -67,7 +67,7 @@ FitnessP PostfixEvaluator::evaluate(IndividualP individual) {
     return fitness;
 }
 
-PostfixEvaluator::~PostfixEvaluator() {
+CpuPostfixEvalOp::~CpuPostfixEvalOp() {
     delete programBuffer;
 
     cerr.precision(7);
@@ -77,7 +77,7 @@ PostfixEvaluator::~PostfixEvaluator() {
 }
 
 
-double PostfixEvaluator::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result) {
+double CpuPostfixEvalOp::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result) {
     result.resize(dataset->size(), 0.);
 
     double fitness = 0.;
@@ -89,7 +89,7 @@ double PostfixEvaluator::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector
     return fitness;
 }
 
-double PostfixEvaluator::h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, const std::vector<double> &input) {
+double CpuPostfixEvalOp::h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, const std::vector<double> &input) {
 
     uint *program = reinterpret_cast<uint *>(buffer);
 

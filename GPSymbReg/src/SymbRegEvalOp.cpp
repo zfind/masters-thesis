@@ -1,9 +1,9 @@
-#include "SimpleEvaluator.h"
+#include "SymbRegEvalOp.h"
 
 #include <chrono>
 
 // called only once, before the evolution  generates training data
-bool SimpleEvaluator::initialize(StateP state) {
+bool SymbRegEvalOp::initialize(StateP state) {
 
     dataset = std::make_shared<Dataset>("data/input.txt");
 
@@ -13,7 +13,7 @@ bool SimpleEvaluator::initialize(StateP state) {
 }
 
 
-FitnessP SimpleEvaluator::evaluate(IndividualP individual) {
+FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
     //  number of digits in double print
     cerr.precision(std::numeric_limits<double>::max_digits10);
@@ -54,7 +54,7 @@ FitnessP SimpleEvaluator::evaluate(IndividualP individual) {
     return fitness;
 }
 
-SimpleEvaluator::~SimpleEvaluator() {
+SymbRegEvalOp::~SymbRegEvalOp() {
     cerr.precision(7);
     cerr << "===== STATS [us] =====" << endl;
     cerr << "ECF time:\t" << ecfTime << endl;

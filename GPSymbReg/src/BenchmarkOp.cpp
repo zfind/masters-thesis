@@ -10,11 +10,11 @@ bool BenchmarkOp::initialize(StateP state) {
     cpuTime = 0L;
     gpuTime = 0L;
 
-    symbRegEvalOp = std::make_unique<SimpleEvaluator>();
+    symbRegEvalOp = std::make_unique<SymbRegEvalOp>();
     symbRegEvalOp->initialize(state);
-    postfixEvalOp = std::make_unique<PostfixEvaluator>();
+    postfixEvalOp = std::make_unique<CpuPostfixEvalOp>();
     postfixEvalOp->initialize(state);
-    cuPostfixEvalOp = std::make_unique<CUPostfixEvalOp>();
+    cuPostfixEvalOp = std::make_unique<CudaPostfixEvalOp>();
     cuPostfixEvalOp->initialize(state);
 
     return true;

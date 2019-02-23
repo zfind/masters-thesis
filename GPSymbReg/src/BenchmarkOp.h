@@ -1,9 +1,9 @@
 #pragma once
 
 #include <ECF/ECF.h>
-#include "SimpleEvaluator.h"
-#include "PostfixEvaluator.h"
-#include "CUPostfixEvalOp.h"
+#include "SymbRegEvalOp.h"
+#include "CpuPostfixEvalOp.h"
+#include "CudaPostfixEvalOp.h"
 
 
 class BenchmarkOp : public EvaluateOp {
@@ -15,9 +15,9 @@ public:
     FitnessP evaluate(IndividualP individual) override;
 
 private:
-    std::unique_ptr<SimpleEvaluator> symbRegEvalOp;
-    std::unique_ptr<PostfixEvaluator> postfixEvalOp;
-    std::unique_ptr<CUPostfixEvalOp> cuPostfixEvalOp;
+    std::unique_ptr<SymbRegEvalOp> symbRegEvalOp;
+    std::unique_ptr<CpuPostfixEvalOp> postfixEvalOp;
+    std::unique_ptr<CudaPostfixEvalOp> cuPostfixEvalOp;
 
     long ecfTime, cpuTime, gpuTime;
 };

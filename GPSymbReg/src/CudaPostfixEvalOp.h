@@ -4,9 +4,9 @@
 #include "Dataset.h"
 
 
-class CUPostfixEvalOp : public EvaluateOp {
+class CudaPostfixEvalOp : public EvaluateOp {
 public:
-    ~CUPostfixEvalOp() override;
+    ~CudaPostfixEvalOp() override;
 
     bool initialize(StateP) override;
 

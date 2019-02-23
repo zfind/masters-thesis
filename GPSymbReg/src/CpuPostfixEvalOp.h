@@ -4,9 +4,9 @@
 #include "Dataset.h"
 
 
-class PostfixEvaluator : public EvaluateOp {
+class CpuPostfixEvalOp : public EvaluateOp {
 public:
-    ~PostfixEvaluator() override;
+    ~CpuPostfixEvalOp() override;
 
     bool initialize(StateP) override;
 

@@ -1,4 +1,4 @@
-#include "CUPostfixEvalOp.h"
+#include "CudaPostfixEvalOp.h"
 
 #include "Constants.h"
 #include <chrono>
@@ -22,7 +22,7 @@ __global__ void d_evaluateIndividualKernel(uint *d_program, int PROGRAM_SIZE, si
 
 
 // called only once, before the evolution  generates training data
-bool CUPostfixEvalOp::initialize(StateP state) {
+bool CudaPostfixEvalOp::initialize(StateP state) {
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
                                         / sizeof(double))
@@ -63,7 +63,7 @@ bool CUPostfixEvalOp::initialize(StateP state) {
     return true;
 }
 
-CUPostfixEvalOp::~CUPostfixEvalOp() {
+CudaPostfixEvalOp::~CudaPostfixEvalOp() {
     cudaFree(d_program);
     cudaFree(d_datasetInput);
     cudaFree(d_resultOutput);
@@ -78,7 +78,7 @@ CUPostfixEvalOp::~CUPostfixEvalOp() {
     cerr << "Conversion time: " << conversionTime << endl;
 }
 
-FitnessP CUPostfixEvalOp::evaluate(IndividualP individual) {
+FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual) {
 
     //  number of digits in double print
     cerr.precision(std::numeric_limits<double>::max_digits10);

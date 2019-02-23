@@ -5,9 +5,9 @@
 #include "Dataset.h"
 
 
-class SimpleEvaluator : public EvaluateOp {
+class SymbRegEvalOp : public EvaluateOp {
 public:
-    ~SimpleEvaluator() override;
+    ~SymbRegEvalOp() override;
 
     bool initialize(StateP) override;
 
