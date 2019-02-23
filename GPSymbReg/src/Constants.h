@@ -1,32 +1,30 @@
 #pragma once
 
+#include <cstdint>
 
-#define DOUBLE_EQUALS       1E-4
-#define MAX_PROGRAM_SIZE    500
-#define THREADS_IN_BLOCK    128
-#define MAX_STACK_SIZE      500
+using gp_code_t = uint32_t;
+using gp_val_t = double;
 
+const double DOUBLE_EQUALS = 1E-4;
+const int MAX_PROGRAM_SIZE = 500;
+const int THREADS_IN_BLOCK = 128;
+const int MAX_STACK_SIZE = 500;
 
+const gp_code_t ARITY_V =   0x00000000;
+const gp_code_t VAR =       0x00000000;
 
-#define ARITY_VAR   0x00000000
-#define VAR         0x00000000
+const gp_code_t ARITY_0 =   0x10000000;
+const gp_code_t CONST =     0x10000000;
 
+const gp_code_t ARITY_1 =   0x20000000;
+const gp_code_t SIN =       0x20000000;
+const gp_code_t COS =       0x20000001;
+const gp_code_t SQR =       0x20000002;
 
-#define ARITY_0     0x10000000
-#define CONST       0x10000000
+const gp_code_t ARITY_2 =   0x30000000;
+const gp_code_t ADD =       0x30000000;
+const gp_code_t SUB =       0x30000001;
+const gp_code_t MUL =       0x30000002;
+const gp_code_t DIV =       0x30000003;
 
-
-#define ARITY_1     0x20000000
-#define SIN         0x20000000
-#define COS         0x20000001
-#define SQR         0x20000002
-
-
-#define ARITY_2     0x30000000
-#define ADD         0x30000000
-#define SUB         0x30000001
-#define MUL         0x30000002
-#define DIV         0x30000003
-
-
-#define ERR     0xFFFFFFFF
+const gp_code_t ERR =       0xFFFFFFFF;

@@ -2,33 +2,33 @@
 
 #include <string>
 #include <vector>
+#include "Constants.h"
 
 class Dataset {
 public:
-    explicit Dataset(const std::string &filename);
+    explicit Dataset(const std::string& filename);
 
-    ~Dataset();
+    ~Dataset() = default;
 
 public:
     int size() const;
 
     int dim() const;
 
-    const std::vector<double> &getSampleInput(int i) const;
+    const std::vector<gp_val_t>& getSampleInput(int i) const;
 
-    double getSampleOutput(int i) const;
+    gp_val_t getSampleOutput(int i) const;
 
-    const std::vector<double> &getOutputVector() const;
+    const std::vector<gp_val_t>& getOutputVector() const;
 
-    std::pair<std::vector<double>, double> getSample(int i) const;
-
-
-private:
-    void loadFromFile(const std::string &filename);
+    std::pair<std::vector<gp_val_t>, gp_val_t> getSample(int i) const;
 
 private:
-    int N_SIZE;
+    bool loadFromFile(const std::string& filename);
+
+private:
+    int SAMPLE_COUNT;
     int SAMPLE_DIMENSION;
-    std::vector<std::vector<double>> datasetInput;
-    std::vector<double> codomain;
+    std::vector<std::vector<gp_val_t>> datasetInput;
+    std::vector<gp_val_t> datasetOutput;
 };

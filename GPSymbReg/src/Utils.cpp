@@ -7,7 +7,8 @@ using namespace std;
 
 #define DBG(x)
 
-void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM_SIZE) {
+void Utils::ConvertToPostfix(IndividualP individual, char* programBuffer, int& programSize)
+{
     DBG(cerr << "=====================================================" << endl;)
 
     DBG(
@@ -19,11 +20,11 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     TreeP pTree = boost::dynamic_pointer_cast<Tree::Tree>(individual->getGenotype(0));
 
-    PROGRAM_SIZE = (uint) pTree->size();
+    programSize = (uint) pTree->size();
 
     //  prefix print
     DBG(
-            for (int i = 0; i < PROGRAM_SIZE; i++) {
+            for (int i = 0; i < programSize; i++) {
                 string primName = (*pTree)[i]->primitive_->getName();
                 cerr << primName << " ";
             }
@@ -32,7 +33,7 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     //  convert to postfix
     stack<vector<int>> st;
-    for (int i = PROGRAM_SIZE - 1; i >= 0; i--) {
+    for (int i = programSize - 1; i >= 0; i--) {
         int arity = (*pTree)[i]->primitive_->getNumberOfArguments();
         if (arity == 2) {
             vector<int> op1 = st.top();
@@ -42,12 +43,14 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
             op1.insert(op1.end(), op2.begin(), op2.end());
             op1.push_back(i);
             st.push(op1);
-        } else if (arity == 1) {
+        }
+        else if (arity == 1) {
             vector<int> op1 = st.top();
             st.pop();
             op1.push_back(i);
             st.push(op1);
-        } else {
+        }
+        else {
             vector<int> tmp;
             tmp.push_back(i);
             st.push(tmp);
@@ -68,51 +71,59 @@ void Utils::convertToPostfix(IndividualP individual, char *buffer, uint &PROGRAM
 
     DBG(cerr << "Velicina:\t" << length << endl;)
 
-    uint *program = reinterpret_cast<uint *>( buffer);
+    uint* program = reinterpret_cast<uint*>( programBuffer);
 
     size_t CONSTANTS_OFFSET =
-            (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1) / sizeof(double)) * sizeof(double);
-    double *programConstants = reinterpret_cast<double *>(buffer + CONSTANTS_OFFSET);
-
+            (int) ((programSize * sizeof(uint) + sizeof(double) - 1) / sizeof(double)) * sizeof(double);
+    double* programConstants = reinterpret_cast<double*>(programBuffer + CONSTANTS_OFFSET);
 
     for (int i : result) {
         string pName = (*pTree)[i]->primitive_->getName();
         if (pName[0] == '+') {
             *program = ADD;
             program++;
-        } else if (pName[0] == '-') {
+        }
+        else if (pName[0] == '-') {
             *program = SUB;
             program++;
-        } else if (pName[0] == '*') {
+        }
+        else if (pName[0] == '*') {
             *program = MUL;
             program++;
-        } else if (pName[0] == '/') {
+        }
+        else if (pName[0] == '/') {
             *program = DIV;
             program++;
-        } else if (pName[0] == 's') {
+        }
+        else if (pName[0] == 's') {
             *program = SIN;
             program++;
-        } else if (pName[0] == 'c') {
+        }
+        else if (pName[0] == 'c') {
             *program = COS;
             program++;
-        } else if (pName[0] == 'X') {
+        }
+        else if (pName[0] == 'X') {
             string xx = pName.substr(1);
             uint idx = VAR + (uint) stoi(xx);
             *program = idx;
             program++;
-        } else if (pName == "1") {
+        }
+        else if (pName == "1") {
             *program = CONST;
             program++;
             *programConstants = 1.;
             programConstants++;
-        } else if (pName[0] == 'D' && pName[1] == '_') {
+        }
+        else if (pName[0] == 'D' && pName[1] == '_') {
             *program = CONST;
             program++;
             double value;
             (*pTree)[i]->primitive_->getValue(&value);
             *programConstants = value;
             programConstants++;
-        } else {
+        }
+        else {
             cerr << pName << endl;
         }
     }

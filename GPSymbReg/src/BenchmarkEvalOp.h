@@ -4,11 +4,11 @@
 #include "SymbRegEvalOp.h"
 #include "CpuPostfixEvalOp.h"
 #include "CudaPostfixEvalOp.h"
+#include "Timer.h"
 
-
-class BenchmarkOp : public EvaluateOp {
+class BenchmarkEvalOp : public EvaluateOp {
 public:
-    ~BenchmarkOp() override;
+    ~BenchmarkEvalOp() override;
 
     bool initialize(StateP) override;
 
@@ -16,9 +16,9 @@ public:
 
 private:
     std::unique_ptr<SymbRegEvalOp> symbRegEvalOp;
-    std::unique_ptr<CpuPostfixEvalOp> postfixEvalOp;
-    std::unique_ptr<CudaPostfixEvalOp> cuPostfixEvalOp;
+    std::unique_ptr<CpuPostfixEvalOp> cpuPostfixEvalOp;
+    std::unique_ptr<CudaPostfixEvalOp> cudaPostfixEvalOp;
 
-    long ecfTime, cpuTime, gpuTime;
+    Timer ecfTimer, cpuTimer, gpuTimer;
 };
 

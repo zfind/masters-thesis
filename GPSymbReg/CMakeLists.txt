@@ -12,7 +12,7 @@ find_package(CUDA 9.1 REQUIRED)
 
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
         -gencode arch=compute_61,code=sm_61
-)
+        )
 
 set(SOURCE_FILES
         src/main.cpp
@@ -28,9 +28,10 @@ set(SOURCE_FILES
         src/CudaPostfixEvalOp.h
         src/CudaPostfixEvalOp.cpp
         src/CudaPostfixEvalOp.cu
-        src/BenchmarkOp.h
-        src/BenchmarkOp.cpp
-)
+        src/BenchmarkEvalOp.h
+        src/BenchmarkEvalOp.cpp
+        src/Timer.h
+        )
 
 
 add_subdirectory(lib/ECF)

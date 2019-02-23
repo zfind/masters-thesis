@@ -5,20 +5,19 @@
 #include "Constants.h"
 #include "Utils.h"
 
-
 using namespace std;
 
 // put "DBG(x) x" to enable debug printout
 #define DBG(x)
 #define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
 
-
 // called only once, before the evolution  generates training data
-bool CpuPostfixEvalOp::initialize(StateP state) {
+bool CpuPostfixEvalOp::initialize(StateP state)
+{
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
-                                        / sizeof(double))
-                                 * sizeof(double);
+            / sizeof(double))
+            * sizeof(double);
     size_t BUFFER_CONSTANTS_SIZE = MAX_PROGRAM_SIZE * sizeof(double);
     size_t BUFFER_SIZE = BUFFER_PROGRAM_SIZE + BUFFER_CONSTANTS_SIZE;
 
@@ -26,58 +25,44 @@ bool CpuPostfixEvalOp::initialize(StateP state) {
 
     dataset = std::make_shared<Dataset>("data/input.txt");
 
-    conversionTime = 0L;
-    cpuTime = 0L;
-
     return true;
 }
 
-
-FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual) {
-
-    //  number of digits in double print
-    cerr.precision(std::numeric_limits<double>::max_digits10);
-
-    std::chrono::steady_clock::time_point begin, end;
-    long diff;
+FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual)
+{
+    cpuTimer.start();
 
     //  convert to postfix
-    begin = std::chrono::steady_clock::now();
-    uint PROGRAM_SIZE;
-    Utils::convertToPostfix(individual, programBuffer, PROGRAM_SIZE);
-    end = std::chrono::steady_clock::now();
-
-    long postfixConversionTime = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    conversionTime += postfixConversionTime;
+    conversionTimer.start();
+    int PROGRAM_SIZE;
+    Utils::ConvertToPostfix(individual, programBuffer, PROGRAM_SIZE);
+    conversionTimer.pause();
 
     //  evaluate on CPU
-    begin = std::chrono::steady_clock::now();
-    vector<double> h_result;
+    vector<double> h_result; // TODO move to h_evaluate()
     double h_fitness = h_evaluate(programBuffer, PROGRAM_SIZE, h_result);
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
     fitness->setValue(h_fitness);
 
-
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    cpuTime += postfixConversionTime + diff;
+    cpuTimer.pause();
 
     return fitness;
 }
 
-CpuPostfixEvalOp::~CpuPostfixEvalOp() {
+CpuPostfixEvalOp::~CpuPostfixEvalOp()
+{
     delete programBuffer;
 
     cerr.precision(7);
     cerr << "===== STATS [us] =====" << endl;
-    cerr << "CPU time:\t" << cpuTime << endl;
-    cerr << "Conversion time: " << conversionTime << endl;
+    cerr << "CPU time:\t" << cpuTimer.get() << endl;
+    cerr << "Conversion time: " << conversionTimer.get() << endl;
 }
 
-
-double CpuPostfixEvalOp::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector<double> &result) {
+double CpuPostfixEvalOp::h_evaluate(char* buffer, uint PROGRAM_SIZE, std::vector<double>& result)
+{
     result.resize(dataset->size(), 0.);
 
     double fitness = 0.;
@@ -89,15 +74,15 @@ double CpuPostfixEvalOp::h_evaluate(char *buffer, uint PROGRAM_SIZE, std::vector
     return fitness;
 }
 
-double CpuPostfixEvalOp::h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, const std::vector<double> &input) {
+double CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, uint PROGRAM_SIZE, const std::vector<double>& input)
+{
 
-    uint *program = reinterpret_cast<uint *>(buffer);
+    uint* program = reinterpret_cast<uint*>(buffer);
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
-                                        / sizeof(double))
-                                 * sizeof(double);
-    double *programConstants = reinterpret_cast<double *>(buffer + BUFFER_PROGRAM_SIZE);
-
+            / sizeof(double))
+            * sizeof(double);
+    double* programConstants = reinterpret_cast<double*>(buffer + BUFFER_PROGRAM_SIZE);
 
     double stack[PROGRAM_SIZE];
 
@@ -111,49 +96,53 @@ double CpuPostfixEvalOp::h_evaluateIndividual(char *buffer, uint PROGRAM_SIZE, c
             o1 = stack[--SP];
 
             switch (program[i]) {
-                case ADD:
-                    tmp = o1 + o2;
-                    break;
-                case SUB:
-                    tmp = o1 - o2;
-                    break;
-                case MUL:
-                    tmp = o1 * o2;
-                    break;
-                case DIV:
-                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
-                    break;
-                default:
-                    CPU_EVALUATE_ERROR
+            case ADD:
+                tmp = o1 + o2;
+                break;
+            case SUB:
+                tmp = o1 - o2;
+                break;
+            case MUL:
+                tmp = o1 * o2;
+                break;
+            case DIV:
+                tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                break;
+            default:
+                CPU_EVALUATE_ERROR
             }
 
-        } else if (program[i] >= ARITY_1) {
+        }
+        else if (program[i] >= ARITY_1) {
             o1 = stack[--SP];
 
             switch (program[i]) {
-                case SQR:
-                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
-                    break;
-                case SIN:
-                    tmp = sin(o1);
-                    break;
-                case COS:
-                    tmp = cos(o1);
-                    break;
-                default:
-                    CPU_EVALUATE_ERROR
+            case SQR:
+                tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                break;
+            case SIN:
+                tmp = sin(o1);
+                break;
+            case COS:
+                tmp = cos(o1);
+                break;
+            default:
+                CPU_EVALUATE_ERROR
             }
 
-        } else if (program[i] == CONST) {
+        }
+        else if (program[i] == CONST) {
             tmp = *programConstants;
             programConstants++;
 
-        } else if (program[i] >= VAR && program[i] < CONST) {
+        }
+        else if (program[i] >= VAR && program[i] < CONST) {
             uint code = program[i];
             uint idx = code - VAR;
             tmp = input[idx];
 
-        } else {
+        }
+        else {
             CPU_EVALUATE_ERROR
         }
 

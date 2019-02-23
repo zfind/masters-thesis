@@ -3,23 +3,16 @@
 #include <chrono>
 
 // called only once, before the evolution  generates training data
-bool SymbRegEvalOp::initialize(StateP state) {
-
+bool SymbRegEvalOp::initialize(StateP state)
+{
     dataset = std::make_shared<Dataset>("data/input.txt");
-
-    ecfTime = 0L;
 
     return true;
 }
 
-
-FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
-
-    //  number of digits in double print
-    cerr.precision(std::numeric_limits<double>::max_digits10);
-
-    std::chrono::steady_clock::time_point begin, end;
-    long diff;
+FitnessP SymbRegEvalOp::evaluate(IndividualP individual)
+{
+    ecfTimer.start();
 
     //  legacy ECF evaluate
 
@@ -27,9 +20,8 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
     FitnessP fitness(new FitnessMin);
 
     // get the genotype we defined in the configuration file
-    Tree::Tree *tree = (Tree::Tree *) individual->getGenotype().get();
+    Tree::Tree* tree = (Tree::Tree*) individual->getGenotype().get();
 
-    begin = std::chrono::steady_clock::now();
     double value = 0;
     for (uint i = 0; i < dataset->size(); i++) {
         // for each test data instance, the x value (domain) must be set
@@ -47,15 +39,15 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
         value += fabs(dataset->getSampleOutput(i) - result);
     }
     fitness->setValue(value);
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    ecfTime += diff;
+
+    ecfTimer.pause();
 
     return fitness;
 }
 
-SymbRegEvalOp::~SymbRegEvalOp() {
+SymbRegEvalOp::~SymbRegEvalOp()
+{
     cerr.precision(7);
     cerr << "===== STATS [us] =====" << endl;
-    cerr << "ECF time:\t" << ecfTime << endl;
+    cerr << "ECF time:\t" << ecfTimer.get() << endl;
 }
