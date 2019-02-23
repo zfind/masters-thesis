@@ -1,4 +1,4 @@
-#include "CUPostfixEvalOp.h"
+#include "CudaPostfixEvalOp.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -104,7 +104,7 @@ __global__ void d_evaluateIndividualKernel(uint *d_program, int PROGRAM_SIZE, si
 }
 
 
-double CUPostfixEvalOp::d_evaluate(char *buffer, uint PROGRAM_SIZE, vector<double> &result) {
+double CudaPostfixEvalOp::d_evaluate(char *buffer, uint PROGRAM_SIZE, vector<double> &result) {
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
                                         / sizeof(double))
