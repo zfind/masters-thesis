@@ -1,9 +1,6 @@
 #include "CpuPostfixEvalOp.h"
 
-#include <chrono>
 #include <stack>
-#include "Constants.h"
-#include "Utils.h"
 
 using namespace std;
 
@@ -35,7 +32,7 @@ FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual)
     //  convert to postfix
     conversionTimer.start();
     int programSize;
-    Utils::ConvertToPostfix(individual, programBuffer, programSize);
+    PostfixEvalOpUtils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
     //  evaluate on CPU

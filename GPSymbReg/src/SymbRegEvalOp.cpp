@@ -1,7 +1,5 @@
 #include "SymbRegEvalOp.h"
 
-#include <chrono>
-
 // called only once, before the evolution  generates training data
 bool SymbRegEvalOp::initialize(StateP state)
 {

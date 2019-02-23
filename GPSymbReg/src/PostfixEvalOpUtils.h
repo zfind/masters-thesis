@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ECF/ECF.h>
 
 using gp_code_t = uint32_t;
 using gp_val_t = double;
@@ -29,3 +30,10 @@ const gp_code_t MUL =       0x30000002;
 const gp_code_t DIV =       0x30000003;
 
 const gp_code_t ERR =       0xFFFFFFFF;
+
+class PostfixEvalOpUtils {
+public:
+
+    static void ConvertToPostfix(IndividualP individual, char* programBuffer, int& programSize);
+
+};

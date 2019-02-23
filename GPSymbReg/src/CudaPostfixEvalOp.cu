@@ -2,16 +2,16 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
-#include "Constants.h"
-
+#include "PostfixEvalOpUtils.h"
 
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
 
 extern "C"
-__global__ void d_evaluateIndividualKernel(gp_code_t *d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
-                                           gp_val_t *d_datasetInput, gp_val_t *d_datasetOutput,
-                                           gp_val_t *d_resultOutput, gp_fitness_t *d_resultFitness,
-                                           int N_SAMPLES, int SAMPLE_DIMENSION) {
+__global__ void d_evaluateIndividualKernel(gp_code_t* d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
+        gp_val_t* d_datasetInput, gp_val_t* d_datasetOutput,
+        gp_val_t* d_resultOutput, gp_fitness_t* d_resultFitness,
+        int N_SAMPLES, int SAMPLE_DIMENSION)
+{
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -30,9 +30,9 @@ __global__ void d_evaluateIndividualKernel(gp_code_t *d_program, int PROGRAM_SIZ
     // in registers or local memory, faster than global
     gp_val_t stack[MAX_STACK_SIZE];
 
-    gp_val_t *inputSample = d_datasetInput + tid * SAMPLE_DIMENSION;
+    gp_val_t* inputSample = d_datasetInput + tid * SAMPLE_DIMENSION;
 
-    gp_val_t *d_programConst = (gp_val_t *) ((char *) (d_program) + BUFFER_PROGRAM_SIZE);
+    gp_val_t* d_programConst = (gp_val_t*) ((char*) (d_program) + BUFFER_PROGRAM_SIZE);
 
     int SP = 0;
     gp_val_t o1, o2, tmp;
@@ -46,49 +46,53 @@ __global__ void d_evaluateIndividualKernel(gp_code_t *d_program, int PROGRAM_SIZ
             o1 = stack[--SP];
 
             switch (shared_programCache[i]) {
-                case ADD:
-                    tmp = o1 + o2;
-                    break;
-                case SUB:
-                    tmp = o1 - o2;
-                    break;
-                case MUL:
-                    tmp = o1 * o2;
-                    break;
-                case DIV:
-                    tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
-                    break;
-                default:
-                    GPU_EVALUATE_ERROR
+            case ADD:
+                tmp = o1 + o2;
+                break;
+            case SUB:
+                tmp = o1 - o2;
+                break;
+            case MUL:
+                tmp = o1 * o2;
+                break;
+            case DIV:
+                tmp = (fabs(o2) > 0.000000001) ? o1 / o2 : 1.;
+                break;
+            default:
+                GPU_EVALUATE_ERROR
             }
 
-        } else if (shared_programCache[i] >= ARITY_1) {
+        }
+        else if (shared_programCache[i] >= ARITY_1) {
             o1 = stack[--SP];
 
             switch (shared_programCache[i]) {
-                case SQR:
-                    tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
-                    break;
-                case SIN:
-                    tmp = sin(o1);
-                    break;
-                case COS:
-                    tmp = cos(o1);
-                    break;
-                default:
-                    GPU_EVALUATE_ERROR
+            case SQR:
+                tmp = (o1 >= 0.) ? sqrt(o1) : 1.;
+                break;
+            case SIN:
+                tmp = sin(o1);
+                break;
+            case COS:
+                tmp = cos(o1);
+                break;
+            default:
+                GPU_EVALUATE_ERROR
             }
 
-        } else if (shared_programCache[i] == CONST) {
+        }
+        else if (shared_programCache[i] == CONST) {
             tmp = *d_programConst;
             d_programConst++;
 
-        } else if (shared_programCache[i] >= VAR && shared_programCache[i] < CONST) {
+        }
+        else if (shared_programCache[i] >= VAR && shared_programCache[i] < CONST) {
             code = shared_programCache[i];
             idx = code - VAR;
             tmp = inputSample[idx];
 
-        } else {
+        }
+        else {
             GPU_EVALUATE_ERROR
         }
 
@@ -104,12 +108,12 @@ __global__ void d_evaluateIndividualKernel(gp_code_t *d_program, int PROGRAM_SIZ
     atomicAdd(d_resultFitness, result);
 }
 
-
-gp_fitness_t CudaPostfixEvalOp::d_evaluate(char *buffer, int PROGRAM_SIZE, vector<gp_val_t> &result) {
+gp_fitness_t CudaPostfixEvalOp::d_evaluate(char* buffer, int PROGRAM_SIZE, vector<gp_val_t>& result)
+{
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
-                                        / sizeof(gp_val_t))
-                                 * sizeof(gp_val_t);
+            / sizeof(gp_val_t))
+            * sizeof(gp_val_t);
     size_t BUFFER_CONSTANTS_SIZE = PROGRAM_SIZE * sizeof(gp_val_t);
     size_t BUFFER_SIZE = BUFFER_PROGRAM_SIZE + BUFFER_CONSTANTS_SIZE;
 
@@ -122,7 +126,7 @@ gp_fitness_t CudaPostfixEvalOp::d_evaluate(char *buffer, int PROGRAM_SIZE, vecto
     dim3 grid((N_SAMPLES + block.x - 1) / block.x, 1);
     size_t SHARED_MEM_SIZE = PROGRAM_SIZE * sizeof(gp_code_t);
 
-    d_evaluateIndividualKernel<<<grid, block, SHARED_MEM_SIZE>>>(
+    d_evaluateIndividualKernel << < grid, block, SHARED_MEM_SIZE >> > (
             d_program, PROGRAM_SIZE, BUFFER_PROGRAM_SIZE,
                     d_datasetInput, d_datasetOutput,
                     d_resultOutput, d_resultFitness,

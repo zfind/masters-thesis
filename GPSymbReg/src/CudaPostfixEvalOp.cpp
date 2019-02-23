@@ -1,10 +1,7 @@
 #include "CudaPostfixEvalOp.h"
 
-#include "Constants.h"
-#include <chrono>
 #include <stack>
 #include <cuda_runtime_api.h>
-#include "Utils.h"
 
 using namespace std;
 
@@ -81,7 +78,7 @@ FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual)
     //  convert to postfix
     conversionTimer.start();
     int programSize;
-    Utils::ConvertToPostfix(individual, programBuffer, programSize);
+    PostfixEvalOpUtils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
     // evaluate on GPU

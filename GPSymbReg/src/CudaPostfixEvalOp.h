@@ -3,7 +3,7 @@
 #include <ECF/ECF.h>
 #include "Dataset.h"
 #include "Timer.h"
-#include "Constants.h"
+#include "PostfixEvalOpUtils.h"
 
 class CudaPostfixEvalOp : public EvaluateOp {
 public:

@@ -1,13 +1,12 @@
-#include "Utils.h"
+#include "PostfixEvalOpUtils.h"
 
 #include <stack>
-#include "Constants.h"
 
 using namespace std;
 
 #define DBG(x)
 
-void Utils::ConvertToPostfix(IndividualP individual, char* programBuffer, int& programSize)
+void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char* programBuffer, int& programSize)
 {
     DBG(cerr << "=====================================================" << endl;)
 
