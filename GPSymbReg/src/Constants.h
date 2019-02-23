@@ -4,6 +4,7 @@
 
 using gp_code_t = uint32_t;
 using gp_val_t = double;
+using gp_fitness_t = double;
 
 const double DOUBLE_EQUALS = 1E-4;
 const int MAX_PROGRAM_SIZE = 500;

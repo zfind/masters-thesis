@@ -3,6 +3,7 @@
 #include "ECF/ECF.h"
 #include "Dataset.h"
 #include "Timer.h"
+#include "Constants.h"
 
 class CpuPostfixEvalOp : public EvaluateOp {
 public:
@@ -13,9 +14,9 @@ public:
     FitnessP evaluate(IndividualP individual) override;
 
 private:
-    double h_evaluate(char* buffer, uint PROGRAM_SIZE, std::vector<double>& result);
+    gp_fitness_t h_evaluate(char* buffer, int programSize, std::vector<gp_val_t>& result);
 
-    double h_evaluateIndividual(char* buffer, uint PROGRAM_SIZE, const std::vector<double>& input);
+    gp_val_t h_evaluateIndividual(char* buffer, int programSize, const std::vector<gp_val_t>& input);
 
 private:
     std::shared_ptr<Dataset> dataset;

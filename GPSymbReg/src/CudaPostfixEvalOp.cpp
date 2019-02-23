@@ -14,19 +14,18 @@ using namespace std;
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
 
 extern "C"
-__global__ void d_evaluateIndividualKernel(uint* d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
-        double* d_datasetInput, double* d_datasetOutput,
-        double* d_resultOutput, double* d_resultFitness,
+__global__ void d_evaluateIndividualKernel(gp_code_t* d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
+        gp_val_t* d_datasetInput, gp_val_t* d_datasetOutput,
+        gp_val_t* d_resultOutput, gp_fitness_t* d_resultFitness,
         int N_SAMPLES, int SAMPLE_DIMENSION);
 
 // called only once, before the evolution  generates training data
 bool CudaPostfixEvalOp::initialize(StateP state)
 {
-
-    size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
-            / sizeof(double))
-            * sizeof(double);
-    size_t BUFFER_CONSTANTS_SIZE = MAX_PROGRAM_SIZE * sizeof(double);
+    size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
+            / sizeof(gp_val_t))
+            * sizeof(gp_val_t);
+    size_t BUFFER_CONSTANTS_SIZE = MAX_PROGRAM_SIZE * sizeof(gp_val_t);
     size_t BUFFER_SIZE = BUFFER_PROGRAM_SIZE + BUFFER_CONSTANTS_SIZE;
 
     programBuffer = new char[BUFFER_SIZE];
@@ -37,22 +36,22 @@ bool CudaPostfixEvalOp::initialize(StateP state)
     int SAMPLE_DIMENSION = dataset->dim();
 
     cudaMalloc((void**) &d_program, BUFFER_SIZE);
-    cudaMalloc((void**) &d_datasetInput, N_SAMPLES * SAMPLE_DIMENSION * sizeof(double));
-    cudaMalloc((void**) &d_resultOutput, N_SAMPLES * sizeof(double));
-    cudaMalloc((void**) &d_datasetOutput, N_SAMPLES * sizeof(double));
-    cudaMalloc((void**) &d_resultFitness, sizeof(double));
+    cudaMalloc((void**) &d_datasetInput, N_SAMPLES * SAMPLE_DIMENSION * sizeof(gp_val_t));
+    cudaMalloc((void**) &d_resultOutput, N_SAMPLES * sizeof(gp_val_t));
+    cudaMalloc((void**) &d_datasetOutput, N_SAMPLES * sizeof(gp_val_t));
+    cudaMalloc((void**) &d_resultFitness, sizeof(gp_fitness_t));
 
     //  copy input matrix to 1D array
-    double* h_input = new double[N_SAMPLES * SAMPLE_DIMENSION];
-    double* p_input = h_input;
-    for (int i = 0; i < N_SAMPLES; i++) {
-        const std::vector<double>& inputVector = dataset->getSampleInput(i);
+    gp_val_t* h_input = new gp_val_t[N_SAMPLES * SAMPLE_DIMENSION];
+    gp_val_t* p_input = h_input;
+    for (int i = 0; i < N_SAMPLES; ++i) {
+        const std::vector<gp_val_t>& inputVector = dataset->getSampleInput(i);
         std::copy(inputVector.cbegin(), inputVector.cend(), p_input);
         p_input += SAMPLE_DIMENSION;
     }
 
-    cudaMemcpy(d_datasetInput, h_input, N_SAMPLES * SAMPLE_DIMENSION * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_datasetOutput, &dataset->getOutputVector()[0], N_SAMPLES * sizeof(double), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_datasetInput, h_input, N_SAMPLES * SAMPLE_DIMENSION * sizeof(gp_val_t), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_datasetOutput, &dataset->getOutputVector()[0], N_SAMPLES * sizeof(gp_val_t), cudaMemcpyHostToDevice);
 
     delete[] h_input;
 
@@ -81,13 +80,13 @@ FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual)
 
     //  convert to postfix
     conversionTimer.start();
-    int PROGRAM_SIZE;
-    Utils::ConvertToPostfix(individual, programBuffer, PROGRAM_SIZE);
+    int programSize;
+    Utils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
     // evaluate on GPU
-    vector<double> d_result;  // TODO move to d_evaluate() if needed
-    double d_fitness = d_evaluate(programBuffer, PROGRAM_SIZE, d_result);
+    vector<gp_val_t> d_result;  // TODO move to d_evaluate() if needed
+    gp_fitness_t d_fitness = d_evaluate(programBuffer, programSize, d_result);
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);

@@ -3,6 +3,7 @@
 #include <ECF/ECF.h>
 #include "Dataset.h"
 #include "Timer.h"
+#include "Constants.h"
 
 class CudaPostfixEvalOp : public EvaluateOp {
 public:
@@ -13,18 +14,18 @@ public:
     FitnessP evaluate(IndividualP individual) override;
 
 private:
-    double d_evaluate(char* buffer, uint PROGRAM_SIZE, std::vector<double>& result);
+    gp_fitness_t d_evaluate(char* buffer, int programSize, std::vector<gp_val_t>& result);
 
 private:
     std::shared_ptr<Dataset> dataset;
 
     char* programBuffer;
 
-    uint* d_program;
-    double* d_datasetInput;
-    double* d_datasetOutput;
-    double* d_resultOutput;
-    double* d_resultFitness;
+    gp_code_t* d_program;
+    gp_val_t* d_datasetInput;
+    gp_val_t* d_datasetOutput;
+    gp_val_t* d_resultOutput;
+    gp_fitness_t* d_resultFitness;
 
     Timer conversionTimer, gpuTimer;
 };

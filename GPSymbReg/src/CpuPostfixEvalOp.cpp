@@ -15,10 +15,10 @@ using namespace std;
 bool CpuPostfixEvalOp::initialize(StateP state)
 {
 
-    size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
-            / sizeof(double))
-            * sizeof(double);
-    size_t BUFFER_CONSTANTS_SIZE = MAX_PROGRAM_SIZE * sizeof(double);
+    size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
+            / sizeof(gp_val_t))
+            * sizeof(gp_val_t);
+    size_t BUFFER_CONSTANTS_SIZE = MAX_PROGRAM_SIZE * sizeof(gp_val_t);
     size_t BUFFER_SIZE = BUFFER_PROGRAM_SIZE + BUFFER_CONSTANTS_SIZE;
 
     programBuffer = new char[BUFFER_SIZE];
@@ -34,13 +34,13 @@ FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual)
 
     //  convert to postfix
     conversionTimer.start();
-    int PROGRAM_SIZE;
-    Utils::ConvertToPostfix(individual, programBuffer, PROGRAM_SIZE);
+    int programSize;
+    Utils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
     //  evaluate on CPU
-    vector<double> h_result; // TODO move to h_evaluate()
-    double h_fitness = h_evaluate(programBuffer, PROGRAM_SIZE, h_result);
+    vector<gp_val_t> h_result; // TODO move to h_evaluate()
+    gp_fitness_t h_fitness = h_evaluate(programBuffer, programSize, h_result);
 
     // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
@@ -61,35 +61,35 @@ CpuPostfixEvalOp::~CpuPostfixEvalOp()
     cerr << "Conversion time: " << conversionTimer.get() << endl;
 }
 
-double CpuPostfixEvalOp::h_evaluate(char* buffer, uint PROGRAM_SIZE, std::vector<double>& result)
+gp_fitness_t CpuPostfixEvalOp::h_evaluate(char* buffer, int programSize, std::vector<gp_val_t>& result)
 {
     result.resize(dataset->size(), 0.);
 
-    double fitness = 0.;
-    for (int i = 0; i < dataset->size(); i++) {
-        result[i] = h_evaluateIndividual(buffer, PROGRAM_SIZE, dataset->getSampleInput(i));
+    gp_fitness_t fitness = 0.;
+    for (int i = 0; i < dataset->size(); ++i) {
+        result[i] = h_evaluateIndividual(buffer, programSize, dataset->getSampleInput(i));
         fitness += fabs(dataset->getSampleOutput(i) - result[i]);
     }
 
     return fitness;
 }
 
-double CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, uint PROGRAM_SIZE, const std::vector<double>& input)
+gp_val_t CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, int programSize, const std::vector<gp_val_t>& input)
 {
 
-    uint* program = reinterpret_cast<uint*>(buffer);
+    gp_code_t* program = reinterpret_cast<gp_code_t*>(buffer);
 
-    size_t BUFFER_PROGRAM_SIZE = (int) ((PROGRAM_SIZE * sizeof(uint) + sizeof(double) - 1)
-            / sizeof(double))
-            * sizeof(double);
-    double* programConstants = reinterpret_cast<double*>(buffer + BUFFER_PROGRAM_SIZE);
+    size_t BUFFER_PROGRAM_SIZE = (int) ((programSize * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
+            / sizeof(gp_val_t))
+            * sizeof(gp_val_t);
+    gp_val_t* programConstants = reinterpret_cast<gp_val_t*>(buffer + BUFFER_PROGRAM_SIZE);
 
-    double stack[PROGRAM_SIZE];
+    gp_val_t stack[programSize];
 
     int SP = 0;
-    double o1, o2, tmp;
+    gp_val_t o1, o2, tmp;
 
-    for (int i = 0; i < PROGRAM_SIZE; i++) {
+    for (int i = 0; i < programSize; ++i) {
 
         if (program[i] >= ARITY_2) {
             o2 = stack[--SP];
@@ -137,8 +137,8 @@ double CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, uint PROGRAM_SIZE, c
 
         }
         else if (program[i] >= VAR && program[i] < CONST) {
-            uint code = program[i];
-            uint idx = code - VAR;
+            gp_code_t code = program[i];
+            int idx = code - VAR;
             tmp = input[idx];
 
         }
@@ -149,6 +149,6 @@ double CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, uint PROGRAM_SIZE, c
         stack[SP++] = tmp;
     }
 
-    double result = stack[--SP];
+    gp_val_t result = stack[--SP];
     return result;
 }
