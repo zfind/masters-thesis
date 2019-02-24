@@ -1,7 +1,7 @@
 #include <memory>
 #include <ECF/ECF.h>
 #include "Primitives.cpp"
-#include "BenchmarkOp.h"
+#include "BenchmarkEvalOp.h"
 
 int main(int argc, char **argv) {
     StateP state(new State);
@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
     // register genotype with our primitives
     state->addGenotype(tree);
 
-    auto benchmarkOp = std::make_unique<BenchmarkOp>();
+    auto benchmarkOp = std::make_unique<BenchmarkEvalOp>();
     state->setEvalOp(benchmarkOp.get());
 
 

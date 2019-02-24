@@ -1,4 +1,4 @@
-#include "CudaEvaluator.h"
+#include "CudaPostfixEvalOp.h"
 
 #include "Constants.h"
 #include <chrono>
@@ -23,7 +23,7 @@ __global__ void d_evaluateIndividual(uint *d_program,
                                      int N, int DIM, int PROG_SIZE);
 
 
-bool CudaEvaluator::initialize(StateP state) {
+bool CudaPostfixEvalOp::initialize(StateP state) {
 
     uint BUFFER_SIZE = MAX_PROGRAM_SIZE * (sizeof(uint) + sizeof(double));
     programBuffer = new char[BUFFER_SIZE];
@@ -62,7 +62,7 @@ bool CudaEvaluator::initialize(StateP state) {
     return true;
 }
 
-CudaEvaluator::~CudaEvaluator() {
+CudaPostfixEvalOp::~CudaPostfixEvalOp() {
     cudaFree(d_program);
     cudaFree(d_datasetInput);
     cudaFree(d_datasetOutput);
@@ -77,7 +77,7 @@ CudaEvaluator::~CudaEvaluator() {
     cerr << "Conversion time: " << conversionTime << endl;
 }
 
-FitnessP CudaEvaluator::evaluate(IndividualP individual) {
+FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual) {
 
     std::chrono::steady_clock::time_point begin, end;
     long diff;

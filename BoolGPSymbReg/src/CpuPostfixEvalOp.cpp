@@ -1,4 +1,4 @@
-#include "PostfixEvaluator.h"
+#include "CpuPostfixEvalOp.h"
 
 #include <chrono>
 #include <stack>
@@ -12,7 +12,7 @@ using namespace std;
 #define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
 
 // called only once, before the evolution  generates training data
-bool PostfixEvaluator::initialize(StateP state) {
+bool CpuPostfixEvalOp::initialize(StateP state) {
 
     uint BUFFER_SIZE = MAX_PROGRAM_SIZE * (sizeof(uint) + sizeof(double));
     programBuffer = new char[BUFFER_SIZE];
@@ -40,7 +40,7 @@ bool PostfixEvaluator::initialize(StateP state) {
     return true;
 }
 
-PostfixEvaluator::~PostfixEvaluator() {
+CpuPostfixEvalOp::~CpuPostfixEvalOp() {
     delete programBuffer;
 
     cerr.precision(7);
@@ -49,7 +49,7 @@ PostfixEvaluator::~PostfixEvaluator() {
     cerr << "Conversion time: " << conversionTime << endl;
 }
 
-FitnessP PostfixEvaluator::evaluate(IndividualP individual) {
+FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual) {
 
     std::chrono::steady_clock::time_point begin, end;
     long diff;
@@ -82,7 +82,7 @@ FitnessP PostfixEvaluator::evaluate(IndividualP individual) {
 }
 
 
-uint PostfixEvaluator::h_evaluate(char *buffer, uint PROG_SIZE, vector<BOOL_TYPE> &result) {
+uint CpuPostfixEvalOp::h_evaluate(char *buffer, uint PROG_SIZE, vector<BOOL_TYPE> &result) {
     result.resize(dataset->size(), 0);
 
     uint fitness = 0;
@@ -97,7 +97,7 @@ uint PostfixEvaluator::h_evaluate(char *buffer, uint PROG_SIZE, vector<BOOL_TYPE
 }
 
 BOOL_TYPE
-PostfixEvaluator::h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, const std::vector<BOOL_TYPE> &input) {
+CpuPostfixEvalOp::h_evaluateIndividual(char *postfixMem, uint PROG_SIZE, const std::vector<BOOL_TYPE> &input) {
     uint *program = (uint *) postfixMem;
 
     BOOL_TYPE stack[PROG_SIZE];

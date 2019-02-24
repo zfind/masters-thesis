@@ -5,9 +5,9 @@
 #include "Dataset.h"
 #include "Constants.h"
 
-class CudaEvaluator : public EvaluateOp {
+class CudaPostfixEvalOp : public EvaluateOp {
 public:
-    ~CudaEvaluator() override;
+    ~CudaPostfixEvalOp() override;
 
     bool initialize(StateP state) override;
 

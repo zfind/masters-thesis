@@ -24,13 +24,13 @@ set(SOURCE_FILES
         src/SymbRegEvalOp.cpp
         src/Utils.h
         src/Utils.cpp
-        src/PostfixEvaluator.h
-        src/PostfixEvaluator.cpp
-        src/CudaEvaluator.h
-        src/CudaEvaluator.cpp
+        src/CpuPostfixEvalOp.h
+        src/CpuPostfixEvalOp.cpp
+        src/CudaPostfixEvalOp.h
+        src/CudaPostfixEvalOp.cpp
         src/CudaEvaluator.cu
-        src/BenchmarkOp.h
-        src/BenchmarkOp.cpp
+        src/BenchmarkEvalOp.h
+        src/BenchmarkEvalOp.cpp
 )
 
 

@@ -1,4 +1,4 @@
-#include "BenchmarkOp.h"
+#include "BenchmarkEvalOp.h"
 
 #include <chrono>
 #include <stack>
@@ -9,7 +9,7 @@ using namespace std;
 #define DBG(x)
 
 // called only once, before the evolution  generates training data
-bool BenchmarkOp::initialize(StateP state) {
+bool BenchmarkEvalOp::initialize(StateP state) {
 
     ecfTime = 0L;
     cpuTime = 0L;
@@ -17,15 +17,15 @@ bool BenchmarkOp::initialize(StateP state) {
 
     simpleEvaluator = std::make_unique<SymbRegEvalOp>();
     simpleEvaluator->initialize(state);
-    postfixEvalOp = std::make_unique<PostfixEvaluator>();
+    postfixEvalOp = std::make_unique<CpuPostfixEvalOp>();
     postfixEvalOp->initialize(state);
-    cudaEvalOp = std::make_unique<CudaEvaluator>();
+    cudaEvalOp = std::make_unique<CudaPostfixEvalOp>();
     cudaEvalOp->initialize(state);
 
     return true;
 }
 
-FitnessP BenchmarkOp::evaluate(IndividualP individual) {
+FitnessP BenchmarkEvalOp::evaluate(IndividualP individual) {
 
     std::chrono::steady_clock::time_point begin, end;
     long diff;
@@ -77,7 +77,7 @@ FitnessP BenchmarkOp::evaluate(IndividualP individual) {
     return fitness;
 }
 
-BenchmarkOp::~BenchmarkOp() {
+BenchmarkEvalOp::~BenchmarkEvalOp() {
     cerr.precision(7);
 
     cerr << "===== STATS [us] =====" << endl;

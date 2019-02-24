@@ -1,4 +1,4 @@
-#include "CudaEvaluator.h"
+#include "CudaPostfixEvalOp.h"
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
@@ -108,7 +108,7 @@ __global__ void d_evaluateIndividual(uint *d_program,
 }
 
 
-uint CudaEvaluator::d_evaluate(char *postfixMem, uint PROG_SIZE, vector<BOOL_TYPE> &result) {
+uint CudaPostfixEvalOp::d_evaluate(char *postfixMem, uint PROG_SIZE, vector<BOOL_TYPE> &result) {
     cudaMemcpy(d_program, postfixMem, PROG_SIZE * sizeof(uint), cudaMemcpyHostToDevice);
 
     int NUM_SAMPLES = dataset->size();
