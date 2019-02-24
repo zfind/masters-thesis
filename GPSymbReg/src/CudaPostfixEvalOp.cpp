@@ -16,9 +16,25 @@ __global__ void d_evaluateIndividualKernel(gp_code_t* d_program, int PROGRAM_SIZ
         gp_val_t* d_resultOutput, gp_fitness_t* d_resultFitness,
         int N_SAMPLES, int SAMPLE_DIMENSION);
 
+void CudaPostfixEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
+}
+
 // called only once, before the evolution  generates training data
 bool CudaPostfixEvalOp::initialize(StateP state)
 {
+    State* pState = state.get();
+    LOG = [pState] (int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
+
+    if (!state->getRegistry()->isModified("dataset.filename"))
+        return false;
+
+    voidP pEntry = state->getRegistry()->getEntry("dataset.filename");
+    std::string datasetFilename = *(static_cast<std::string*>(pEntry.get()));
+
     size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
             / sizeof(gp_val_t))
             * sizeof(gp_val_t);
@@ -27,7 +43,7 @@ bool CudaPostfixEvalOp::initialize(StateP state)
 
     programBuffer = new char[BUFFER_SIZE];
 
-    dataset = std::make_shared<Dataset>("data/input.txt");
+    dataset = std::make_shared<Dataset>(datasetFilename);
 
     int N_SAMPLES = dataset->size();
     int SAMPLE_DIMENSION = dataset->dim();
@@ -65,10 +81,12 @@ CudaPostfixEvalOp::~CudaPostfixEvalOp()
 
     delete programBuffer;
 
-    cerr.precision(7);
-    cerr << "===== STATS [us] =====" << endl;
-    cerr << "GPU time:\t" << gpuTimer.get() << endl;
-    cerr << "Conversion time: " << conversionTimer.get() << endl;
+    std::stringstream ss;
+    ss.precision(7);
+    ss << "===== STATS [us] =====" << endl;
+    ss << "GPU time:\t" << gpuTimer.get() << endl;
+    ss << "Conversion time: " << conversionTimer.get() << endl;
+    LOG(1, ss.str());
 }
 
 FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual)

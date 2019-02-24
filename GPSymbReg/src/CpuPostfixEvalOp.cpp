@@ -8,9 +8,24 @@ using namespace std;
 #define DBG(x)
 #define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
 
+void CpuPostfixEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP)(new std::string), ECF::STRING);
+}
+
 // called only once, before the evolution  generates training data
 bool CpuPostfixEvalOp::initialize(StateP state)
 {
+    State* pState = state.get();
+    LOG = [pState] (int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
+
+    if (!state->getRegistry()->isModified("dataset.filename"))
+        return false;
+
+    voidP pEntry = state->getRegistry()->getEntry("dataset.filename");
+    std::string datasetFilename = *(static_cast<std::string*>(pEntry.get()));
 
     size_t BUFFER_PROGRAM_SIZE = (int) ((MAX_PROGRAM_SIZE * sizeof(gp_code_t) + sizeof(gp_val_t) - 1)
             / sizeof(gp_val_t))
@@ -20,7 +35,7 @@ bool CpuPostfixEvalOp::initialize(StateP state)
 
     programBuffer = new char[BUFFER_SIZE];
 
-    dataset = std::make_shared<Dataset>("data/input.txt");
+    dataset = std::make_shared<Dataset>(datasetFilename);
 
     return true;
 }
@@ -52,10 +67,12 @@ CpuPostfixEvalOp::~CpuPostfixEvalOp()
 {
     delete programBuffer;
 
-    cerr.precision(7);
-    cerr << "===== STATS [us] =====" << endl;
-    cerr << "CPU time:\t" << cpuTimer.get() << endl;
-    cerr << "Conversion time: " << conversionTimer.get() << endl;
+    std::stringstream ss;
+    ss.precision(7);
+    ss << "===== STATS [us] =====" << endl;
+    ss << "CPU time:\t" << cpuTimer.get() << endl;
+    ss << "Conversion time: " << conversionTimer.get() << endl;
+    LOG(1, ss.str());
 }
 
 gp_fitness_t CpuPostfixEvalOp::h_evaluate(char* buffer, int programSize, std::vector<gp_val_t>& result)

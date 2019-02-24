@@ -9,6 +9,8 @@ class CpuPostfixEvalOp : public EvaluateOp {
 public:
     ~CpuPostfixEvalOp() override;
 
+    void registerParameters(StateP state) override;
+
     bool initialize(StateP) override;
 
     FitnessP evaluate(IndividualP individual) override;
@@ -24,4 +26,6 @@ private:
     char* programBuffer;
 
     Timer conversionTimer, cpuTimer;
+
+    std::function<void(int, std::string)> LOG;
 };

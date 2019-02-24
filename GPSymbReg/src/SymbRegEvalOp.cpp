@@ -1,9 +1,27 @@
 #include "SymbRegEvalOp.h"
 
+void SymbRegEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
+}
+
 // called only once, before the evolution  generates training data
 bool SymbRegEvalOp::initialize(StateP state)
 {
-    dataset = std::make_shared<Dataset>("data/input.txt");
+    State* pState = state.get();
+    LOG = [pState] (int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
+
+    // check if the parameters are stated (used) in the conf. file
+    // if not, we return false so the initialization fails
+    if (!state->getRegistry()->isModified("dataset.filename"))
+        return false;
+
+    voidP pEntry = state->getRegistry()->getEntry("dataset.filename"); // get parameter value
+    std::string datasetFilename = *(static_cast<std::string*>(pEntry.get())); // convert from voidP to user defined type
+
+    dataset = std::make_shared<Dataset>(datasetFilename);
 
     return true;
 }
@@ -45,7 +63,9 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual)
 
 SymbRegEvalOp::~SymbRegEvalOp()
 {
-    cerr.precision(7);
-    cerr << "===== STATS [us] =====" << endl;
-    cerr << "ECF time:\t" << ecfTimer.get() << endl;
+    std::stringstream ss;
+    ss.precision(7);
+    ss << "===== STATS [us] =====" << endl;
+    ss << "ECF time:\t" << ecfTimer.get() << endl;
+    LOG(1, ss.str());
 }

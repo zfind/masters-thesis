@@ -9,6 +9,8 @@ class CudaPostfixEvalOp : public EvaluateOp {
 public:
     ~CudaPostfixEvalOp() override;
 
+    void registerParameters(StateP state) override;
+
     bool initialize(StateP) override;
 
     FitnessP evaluate(IndividualP individual) override;
@@ -28,4 +30,6 @@ private:
     gp_fitness_t* d_resultFitness;
 
     Timer conversionTimer, gpuTimer;
+
+    std::function<void(int, std::string)> LOG;
 };

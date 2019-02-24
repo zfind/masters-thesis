@@ -2,8 +2,18 @@
 
 #include "PostfixEvalOpUtils.h"
 
+void BenchmarkEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
+}
+
 bool BenchmarkEvalOp::initialize(StateP state)
 {
+    State* pState = state.get();
+    LOG = [pState] (int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
+
     symbRegEvalOp = std::make_unique<SymbRegEvalOp>();
     symbRegEvalOp->initialize(state);
 
@@ -55,17 +65,18 @@ FitnessP BenchmarkEvalOp::evaluate(IndividualP individual)
 
 BenchmarkEvalOp::~BenchmarkEvalOp()
 {
-    // TODO move to Logger
+    std::stringstream ss;
+    ss.precision(7);
 
-    cerr.precision(7);
+    ss << "===== STATS [us] =====" << endl;
 
-    cerr << "===== STATS [us] =====" << endl;
+    ss << "ECF time:\t" << ecfTimer.get() << endl;
+    ss << "CPU time:\t" << cpuTimer.get() << endl;
+    ss << "GPU time:\t" << gpuTimer.get() << endl;
 
-    cerr << "ECF time:\t" << ecfTimer.get() << endl;
-    cerr << "CPU time:\t" << cpuTimer.get() << endl;
-    cerr << "GPU time:\t" << gpuTimer.get() << endl;
+    ss << "CPU vs ECF:\t" << (double) ecfTimer.get() / cpuTimer.get() << endl;
+    ss << "GPU vs CPU:\t" << (double) cpuTimer.get() / gpuTimer.get() << endl;
+    ss << "GPU vs ECF:\t" << (double) ecfTimer.get() / gpuTimer.get() << endl;
 
-    cerr << "CPU vs ECF:\t" << (double) ecfTimer.get() / cpuTimer.get() << endl;
-    cerr << "GPU vs CPU:\t" << (double) cpuTimer.get() / gpuTimer.get() << endl;
-    cerr << "GPU vs ECF:\t" << (double) ecfTimer.get() / gpuTimer.get() << endl;
+    LOG(1, ss.str());
 }

@@ -10,6 +10,8 @@ class BenchmarkEvalOp : public EvaluateOp {
 public:
     ~BenchmarkEvalOp() override;
 
+    void registerParameters(StateP state) override;
+
     bool initialize(StateP) override;
 
     FitnessP evaluate(IndividualP individual) override;
@@ -20,5 +22,7 @@ private:
     std::unique_ptr<CudaPostfixEvalOp> cudaPostfixEvalOp;
 
     Timer ecfTimer, cpuTimer, gpuTimer;
+
+    std::function<void(int, std::string)> LOG;
 };
 
