@@ -1,26 +1,27 @@
 #pragma once
 
-
 #include <ECF/ECF.h>
 #include "SymbRegEvalOp.h"
 #include "CpuPostfixEvalOp.h"
 #include "CudaPostfixEvalOp.h"
+#include "Timer.h"
 
 class BenchmarkEvalOp : public EvaluateOp {
 public:
     ~BenchmarkEvalOp() override;
 
+    void registerParameters(StateP state) override;
+
     bool initialize(StateP) override;
 
     FitnessP evaluate(IndividualP individual) override;
 
-
 private:
-    std::unique_ptr<SymbRegEvalOp> simpleEvaluator;
-    std::unique_ptr<CpuPostfixEvalOp> postfixEvalOp;
-    std::unique_ptr<CudaPostfixEvalOp> cudaEvalOp;
+    std::unique_ptr<SymbRegEvalOp> symbRegEvalOp;
+    std::unique_ptr<CpuPostfixEvalOp> cpuPostfixEvalOp;
+    std::unique_ptr<CudaPostfixEvalOp> cudaPostfixEvalOp;
 
-    long ecfTime, cpuTime, gpuTime;
+    Timer ecfTimer, cpuTimer, gpuTimer;
+
+    std::function<void(int, std::string)> LOG;
 };
-
-typedef boost::shared_ptr<BenchmarkEvalOp> BenchmarkOpP;

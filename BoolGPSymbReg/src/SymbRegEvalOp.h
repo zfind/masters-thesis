@@ -3,11 +3,13 @@
 #include <vector>
 #include <ECF/ECF.h>
 #include "Dataset.h"
-
+#include "Timer.h"
 
 class SymbRegEvalOp : public EvaluateOp {
 public:
     ~SymbRegEvalOp() override;
+
+    void registerParameters(StateP state) override;
 
     bool initialize(StateP) override;
 
@@ -16,5 +18,7 @@ public:
 private:
     std::shared_ptr<Dataset> dataset;
 
-    long ecfTime;
+    Timer ecfTimer;
+
+    std::function<void(int, std::string)> LOG;
 };

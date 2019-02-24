@@ -3,7 +3,8 @@
 #include "Primitives.cpp"
 #include "BenchmarkEvalOp.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv)
+{
     StateP state(new State);
 
     // create tree genotype
@@ -39,10 +40,8 @@ int main(int argc, char **argv) {
     auto benchmarkOp = std::make_unique<BenchmarkEvalOp>();
     state->setEvalOp(benchmarkOp.get());
 
-
     state->initialize(argc, argv);
     state->run();
-
 
     return 0;
 }

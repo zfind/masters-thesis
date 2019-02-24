@@ -2,22 +2,22 @@
 
 #include <cuda.h>
 #include <cuda_runtime_api.h>
-#include "Constants.h"
+#include "PostfixEvalOpUtils.h"
 
 #define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
 
 extern "C"
-__global__ void d_evaluateIndividual(uint *d_program,
-                                     BOOL_TYPE *d_datasetInput, BOOL_TYPE *d_datasetOutput,
-                                     BOOL_TYPE *d_resultOutput, uint *d_resultFitness,
-                                     int N, int DIM, int PROG_SIZE) {
-
-    uint tid = threadIdx.x + blockIdx.x * blockDim.x;
+__global__ void d_evaluateIndividual(gp_code_t* d_program,
+        gp_val_t* d_datasetInput, gp_val_t* d_datasetOutput,
+        gp_val_t* d_resultOutput, gp_fitness_t* d_resultFitness,
+        int N, int DIM, int PROG_SIZE)
+{
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid == 0) *d_resultFitness = 0;
 
-    extern __shared__ uint shared_programCache[];
-    for (uint idx = threadIdx.x; idx < PROG_SIZE; idx += THREADS_IN_BLOCK) {
+    extern __shared__ gp_code_t shared_programCache[];
+    for (int idx = threadIdx.x; idx < PROG_SIZE; idx += THREADS_IN_BLOCK) {
         shared_programCache[idx] = d_program[idx];
     }
 
@@ -29,75 +29,75 @@ __global__ void d_evaluateIndividual(uint *d_program,
     // in global memory, slow
     //    double *stack = d_globalStack + tid * PROG_SIZE;
     // in local, faster
-    BOOL_TYPE stack[MAX_STACK_SIZE];
+    gp_val_t stack[MAX_STACK_SIZE];
 
     //  stack in low latency shared memory
     //    extern __shared__ double stackChunk[];
     //    double *stack = stackChunk + threadIdx.x * PROG_SIZE;
 
-    BOOL_TYPE *inputSample = d_datasetInput + tid * DIM;
+    gp_val_t* inputSample = d_datasetInput + tid * DIM;
 
     int SP = 0;
-    BOOL_TYPE o1, o2, tmp;
-    uint code, idx;
+    gp_val_t o1, o2, tmp;
+    gp_code_t code;
+    int idx;
 
-    for (int i = 0; i < PROG_SIZE; i++) {
+    for (int i = 0; i < PROG_SIZE; ++i) {
 
         if (shared_programCache[i] >= ARITY_2) {
             o2 = stack[--SP];
             o1 = stack[--SP];
 
             switch (shared_programCache[i]) {
-                case AND:
-                    tmp = o1 && o2;
-                    break;
-                case OR:
-                    tmp = o1 || o2;
-                    break;
-                case XOR:
-                    tmp = (o1 && !o2) || (!o1 && o2);
-                    break;
-                case XNOR:
-                    tmp = (!(o1 && !o2) || (!o1 && o2));
-                    break;
-                case NAND:
-                    tmp = (!o1) || (!o2);
-                    break;
-                case NOR:
-                    tmp = (!o1) && (!o2);
-                    break;
-                default:
-                    GPU_EVALUATE_ERROR
+            case AND:
+                tmp = o1 && o2;
+                break;
+            case OR:
+                tmp = o1 || o2;
+                break;
+            case XOR:
+                tmp = (o1 && !o2) || (!o1 && o2);
+                break;
+            case XNOR:
+                tmp = (!(o1 && !o2) || (!o1 && o2));
+                break;
+            case NAND:
+                tmp = (!o1) || (!o2);
+                break;
+            case NOR:
+                tmp = (!o1) && (!o2);
+                break;
+            default:
+                GPU_EVALUATE_ERROR
             }
 
-        } else if (shared_programCache[i] >= ARITY_1) {
+        }
+        else if (shared_programCache[i] >= ARITY_1) {
             o1 = stack[--SP];
 
             switch (shared_programCache[i]) {
-                case NOT:
-                    tmp = !o1;
-                    break;
-                default:
-                    GPU_EVALUATE_ERROR
+            case NOT:
+                tmp = !o1;
+                break;
+            default:
+                GPU_EVALUATE_ERROR
             }
 
-    //        } else if (shared_programCache[i] == CONST) {
-    //            tmp = *d_programConst;
-    //            d_programConst++;
-
-        } else if (shared_programCache[i] >= VAR && shared_programCache[i] < CONST) {
+        }
+        else if (shared_programCache[i] >= VAR && shared_programCache[i] < CONST) {
             code = shared_programCache[i];
             idx = code - VAR;
             tmp = inputSample[idx];
 
-        } else {
+        }
+        else {
             GPU_EVALUATE_ERROR
         }
 
         stack[SP++] = tmp;
     }
 
-    BOOL_TYPE result = stack[--SP];
+    gp_val_t result = stack[--SP];
 
     //    d_resultOutput[tid] = result;
 
@@ -107,28 +107,28 @@ __global__ void d_evaluateIndividual(uint *d_program,
 
 }
 
-
-uint CudaPostfixEvalOp::d_evaluate(char *postfixMem, uint PROG_SIZE, vector<BOOL_TYPE> &result) {
-    cudaMemcpy(d_program, postfixMem, PROG_SIZE * sizeof(uint), cudaMemcpyHostToDevice);
+gp_fitness_t CudaPostfixEvalOp::d_evaluate(char* postfixMem, int programSize, vector<gp_val_t>& result)
+{
+    cudaMemcpy(d_program, postfixMem, programSize * sizeof(gp_code_t), cudaMemcpyHostToDevice);
 
     int NUM_SAMPLES = dataset->size();
     int INPUT_DIMENSION = dataset->dim();
 
     dim3 block(THREADS_IN_BLOCK, 1);
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
-    size_t SHARED_MEM_SIZE = PROG_SIZE * sizeof(uint);
+    size_t SHARED_MEM_SIZE = programSize * sizeof(gp_code_t);
 
     d_evaluateIndividual << < grid, block, SHARED_MEM_SIZE >> > (d_program,
             d_datasetInput, d_datasetOutput, d_resultOutput, d_resultFitness,
-            NUM_SAMPLES, INPUT_DIMENSION, PROG_SIZE);
+            NUM_SAMPLES, INPUT_DIMENSION, programSize);
 
 
     // ukljuci u kernelu!!!
     //    result.resize(NUM_SAMPLES, 0);
-    //    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(BOOL_TYPE), cudaMemcpyDeviceToHost);
+    //    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(gp_val_t), cudaMemcpyDeviceToHost);
 
-    uint fitness = 0;
-    cudaMemcpy(&fitness, d_resultFitness, sizeof(uint), cudaMemcpyDeviceToHost);
+    gp_fitness_t fitness = 0;
+    cudaMemcpy(&fitness, d_resultFitness, sizeof(gp_fitness_t), cudaMemcpyDeviceToHost);
 
     //    for (uint i = 0; i < NUM_SAMPLES; i++) {
     //        if (datasetOutput[i] != result[i]) {

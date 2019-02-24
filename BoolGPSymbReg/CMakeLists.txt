@@ -16,21 +16,21 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
 
 set(SOURCE_FILES
         src/main.cpp
-        src/Constants.h
+        src/PostfixEvalOpUtils.h
+        src/PostfixEvalOpUtils.cpp
         src/Dataset.h
         src/Dataset.cpp
         src/Primitives.cpp
         src/SymbRegEvalOp.h
         src/SymbRegEvalOp.cpp
-        src/Utils.h
-        src/Utils.cpp
         src/CpuPostfixEvalOp.h
         src/CpuPostfixEvalOp.cpp
         src/CudaPostfixEvalOp.h
         src/CudaPostfixEvalOp.cpp
-        src/CudaEvaluator.cu
+        src/CudaPostfixEvalOp.cu
         src/BenchmarkEvalOp.h
         src/BenchmarkEvalOp.cpp
+        src/Timer.h
 )
 
 

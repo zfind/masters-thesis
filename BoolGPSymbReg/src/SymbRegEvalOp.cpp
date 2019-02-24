@@ -1,15 +1,29 @@
 #include "SymbRegEvalOp.h"
 
-#include <chrono>
+void SymbRegEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
+}
 
 // called only once, before the evolution  generates training data
-bool SymbRegEvalOp::initialize(StateP state) {
+bool SymbRegEvalOp::initialize(StateP state)
+{
+    State* pState = state.get();
+    LOG = [pState](int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
 
-    dataset = std::make_shared<Dataset>("data/input.txt");
+    // check if the parameters are stated (used) in the conf. file
+    // if not, we return false so the initialization fails
+    if (!state->getRegistry()->isModified("dataset.filename"))
+        return false;
 
-    ecfTime = 0L;
+    voidP pEntry = state->getRegistry()->getEntry("dataset.filename"); // get parameter value
+    std::string datasetFilename = *(static_cast<std::string*>(pEntry.get())); // convert from voidP to user defined type
 
-    Tree::Tree *tree = (Tree::Tree *) state->getGenotypes().at(0).get();
+    dataset = std::make_shared<Dataset>(datasetFilename);
+
+    Tree::Tree* tree = (Tree::Tree*) state->getGenotypes().at(0).get();
     // zadaj vrijednosti obicnim varijablama (ne mijenjaju se tijekom evolucije!)
 
     //    for (uint i = 0; i < NUM_SAMPLES; i++) {
@@ -35,32 +49,28 @@ bool SymbRegEvalOp::initialize(StateP state) {
     return true;
 }
 
-FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
-
-    std::chrono::steady_clock::time_point begin, end;
-    long diff;
+FitnessP SymbRegEvalOp::evaluate(IndividualP individual)
+{
+    ecfTimer.start();
 
     //  legacy ECF evaluate
 
-// we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
+    // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
 
-// get the genotype we defined in the configuration file
-    Tree::Tree *tree = (Tree::Tree *) individual->getGenotype().get();
-// (you can also use boost smart pointers:)
-//TreeP tree = boost::static_pointer_cast<Tree::Tree> (individual->getGenotype());
+    // get the genotype we defined in the configuration file
+    Tree::Tree* tree = (Tree::Tree*) individual->getGenotype().get();
 
-    begin = std::chrono::steady_clock::now();
     uint value = 0;
     int NUM_SAMPLES = dataset->size();
 
-// get the y value of the current tree
+    // get the y value of the current tree
     vector<bool> result;
     result.resize(NUM_SAMPLES, 0);
     tree->execute(&result);
 
     for (uint i = 0; i < NUM_SAMPLES; i++) {
-// add the difference
+        // add the difference
         if (dataset->getSampleOutput(i) != result[i]) {
             value++;
         }
@@ -68,15 +78,16 @@ FitnessP SymbRegEvalOp::evaluate(IndividualP individual) {
 
     fitness->setValue(value);
 
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    ecfTime += diff;
+    ecfTimer.pause();
 
     return fitness;
 }
 
-SymbRegEvalOp::~SymbRegEvalOp() {
-    cerr.precision(7);
-    cerr << "===== STATS [us] =====" << endl;
-    cerr << "ECF time:\t" << ecfTime << endl;
+SymbRegEvalOp::~SymbRegEvalOp()
+{
+    std::stringstream ss;
+    ss.precision(7);
+    ss << "===== STATS [us] =====" << endl;
+    ss << "ECF time:\t" << ecfTimer.get() << endl;
+    LOG(1, ss.str());
 }

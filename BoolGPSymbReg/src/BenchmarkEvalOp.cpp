@@ -1,92 +1,79 @@
 #include "BenchmarkEvalOp.h"
 
-#include <chrono>
-#include <stack>
+#include "PostfixEvalOpUtils.h"
 
-using namespace std;
+void BenchmarkEvalOp::registerParameters(StateP state)
+{
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
+}
 
-// put "DBG(x) x" to enable debug printout
-#define DBG(x)
+bool BenchmarkEvalOp::initialize(StateP state)
+{
+    State* pState = state.get();
+    LOG = [pState](int level, std::string msg) {
+        ECF_LOG(pState, level, msg);
+    };
 
-// called only once, before the evolution  generates training data
-bool BenchmarkEvalOp::initialize(StateP state) {
+    symbRegEvalOp = std::make_unique<SymbRegEvalOp>();
+    symbRegEvalOp->initialize(state);
 
-    ecfTime = 0L;
-    cpuTime = 0L;
-    gpuTime = 0L;
+    cpuPostfixEvalOp = std::make_unique<CpuPostfixEvalOp>();
+    cpuPostfixEvalOp->initialize(state);
 
-    simpleEvaluator = std::make_unique<SymbRegEvalOp>();
-    simpleEvaluator->initialize(state);
-    postfixEvalOp = std::make_unique<CpuPostfixEvalOp>();
-    postfixEvalOp->initialize(state);
-    cudaEvalOp = std::make_unique<CudaPostfixEvalOp>();
-    cudaEvalOp->initialize(state);
+    cudaPostfixEvalOp = std::make_unique<CudaPostfixEvalOp>();
+    cudaPostfixEvalOp->initialize(state);
 
     return true;
 }
 
-FitnessP BenchmarkEvalOp::evaluate(IndividualP individual) {
-
-    std::chrono::steady_clock::time_point begin, end;
-    long diff;
-
+FitnessP BenchmarkEvalOp::evaluate(IndividualP individual)
+{
     //  legacy ECF evaluate
-    begin = std::chrono::steady_clock::now();
-    FitnessP fitness = simpleEvaluator->evaluate(individual);
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    ecfTime += diff;
+    ecfTimer.start();
+    FitnessP fitness = symbRegEvalOp->evaluate(individual);
+    ecfTimer.pause();
 
     //  evaluate on CPU
-    begin = std::chrono::steady_clock::now();
-    FitnessP h_fitness = postfixEvalOp->evaluate(individual);
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    cpuTime += diff;
+    cpuTimer.start();
+    FitnessP h_fitness = cpuPostfixEvalOp->evaluate(individual);
+    cpuTimer.pause();
 
     // evaluate on GPU
-    begin = std::chrono::steady_clock::now();
-    FitnessP d_fitness = cudaEvalOp->evaluate(individual);
-    end = std::chrono::steady_clock::now();
-    diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-    gpuTime += diff;
-
-
-//    for (uint i = 0; i < h_result.size(); i++) {
-//        if (h_result[i] != result[i]) {
-//            cerr << "KRIVO\t" << h_result[i] << "\t" << result[i] << endl;
-//        }
-//    }
-
+    gpuTimer.start();
+    FitnessP d_fitness = cudaPostfixEvalOp->evaluate(individual);
+    gpuTimer.pause();
 
     if (fabs(h_fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) { // std::numeric_limits<double>::epsilon()
-        cerr << "FAIL\t"
-             << "host:\t" << h_fitness->getValue()
+        std::cerr << "WARN Host-device difference\t"
+                << "host:\t" << h_fitness->getValue()
              << "\tdev:\t" << d_fitness->getValue()
              << "\tdiff:\t" << fabs(h_fitness->getValue() - d_fitness->getValue()) << endl;
     }
     if (fabs(fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
-        cerr << "FAIL\t"
-             << "real:\t" << fitness->getValue()
+        std::cerr << "WARN ECF-device difference\t"
+             << "ecf:\t" << fitness->getValue()
              << "\thost:\t" << h_fitness->getValue()
              << "\tdev:\t" << d_fitness->getValue()
              << "\tdiff:\t" << fabs(fitness->getValue() - d_fitness->getValue()) << endl;
     }
 
-
     return fitness;
 }
 
-BenchmarkEvalOp::~BenchmarkEvalOp() {
-    cerr.precision(7);
+BenchmarkEvalOp::~BenchmarkEvalOp()
+{
+    std::stringstream ss;
+    ss.precision(7);
 
-    cerr << "===== STATS [us] =====" << endl;
+    ss << "===== STATS [us] =====" << endl;
 
-    cerr << "ECF time:\t" << ecfTime << endl;
-    cerr << "CPU time:\t" << cpuTime << endl;
-    cerr << "GPU time:\t" << gpuTime << endl;
+    ss << "ECF time:\t" << ecfTimer.get() << endl;
+    ss << "CPU time:\t" << cpuTimer.get() << endl;
+    ss << "GPU time:\t" << gpuTimer.get() << endl;
 
-    cerr << "CPU vs ECF:\t" << (double) ecfTime / cpuTime << endl;
-    cerr << "GPU vs CPU:\t" << (double) cpuTime / gpuTime << endl;
-    cerr << "GPU vs ECF:\t" << (double) ecfTime / gpuTime << endl;
+    ss << "CPU vs ECF:\t" << (double) ecfTimer.get() / cpuTimer.get() << endl;
+    ss << "GPU vs CPU:\t" << (double) cpuTimer.get() / gpuTimer.get() << endl;
+    ss << "GPU vs ECF:\t" << (double) ecfTimer.get() / gpuTimer.get() << endl;
+
+    LOG(1, ss.str());
 }

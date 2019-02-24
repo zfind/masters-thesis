@@ -23,5 +23,6 @@
                 <Entry key="log.filename">log.txt</Entry>
                 <Entry key="batch.repeats">0</Entry>
                 <Entry key="batch.statsfile">stats.txt</Entry>
+                <Entry key="dataset.filename">data/input.txt</Entry>
         </Registry>
 </ECF>

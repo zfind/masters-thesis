@@ -1,13 +1,12 @@
-#include "Utils.h"
+#include "PostfixEvalOpUtils.h"
 
 #include <stack>
-#include "Constants.h"
 
 using namespace std;
 
 #define DBG(x)
 
-void Utils::convertToPostfixNew(IndividualP individual, char *postfixMem, uint &PROG_SIZE) {
+void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char *postfixMem, int &PROG_SIZE) {
     DBG(cerr << "=====================================================" << endl;)
 
     uint nTreeSize, nTree;
