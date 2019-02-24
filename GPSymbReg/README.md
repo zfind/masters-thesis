@@ -1,7 +1,7 @@
 # GPSymbReg 
 
 This repo contains example of real-value symbolic regression problem solved using ECF framework.
-To speed up execution, genetic programs are evaluated using postfix interpreter implemented in CUDA
+To speed up execution, genetic programs are translated to postfix expression and executed using evaluator implemented in CUDA.
 
 Build:
 

@@ -20,7 +20,7 @@ These projects are successfully tested in the following environment:
 * CMake 3.9
 
 
-## Installation
+### Installation
 
 Install graphics drivers:
 
