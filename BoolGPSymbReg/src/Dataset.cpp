@@ -3,89 +3,76 @@
 #include <fstream>
 #include <iostream>
 
-using std::vector;
-
-
-Dataset::Dataset(const std::string &filename) {
-    loadFromFile(filename);
+Dataset::Dataset(const std::string& filename)
+{
+    if (!loadFromFile(filename)) {
+        std::cerr << "ERROR:\t"
+                  << "Can't read file: "
+                  << filename
+                  << "Exiting."
+                  << std::endl;
+        exit(1);
+    }
 }
 
-Dataset::~Dataset() {
-
+int Dataset::size() const
+{
+    return SAMPLE_COUNT;
 }
 
-int Dataset::size() const {
-    return N_SIZE;
-}
-
-const std::vector<bool> &Dataset::getSampleInput(int i) const {
+const std::vector<gp_val_t>& Dataset::getSampleInput(int i) const
+{
     return datasetInput[i];
 }
 
-bool Dataset::getSampleOutput(int i) const {
-    return codomain[i];
+gp_val_t Dataset::getSampleOutput(int i) const
+{
+    return datasetOutput[i];
 }
 
-void Dataset::loadFromFile(const std::string &filename) {
+bool Dataset::loadFromFile(const std::string& filename)
+{
     std::ifstream in(filename);
 
     if (!in) {
-        std::cerr << "Cannot open file.\n";
-        exit(-1);
+        std::cerr << "ERROR:\t"
+                  << "Can't open file: "
+                  << filename
+                  << std::endl;
+        return false;
     }
 
-    int N, DIM;
-    in >> N;
-    in >> DIM;
+    in >> SAMPLE_COUNT;
+    in >> SAMPLE_DIMENSION;
 
-    vector<bool> initRow;
-    initRow.resize(DIM, 0.);
-    datasetInput.resize(N, initRow);
-    codomain.resize(N);
+    std::vector<gp_val_t> initRow;
+    initRow.resize(SAMPLE_DIMENSION, 0);
+    datasetInput.resize(SAMPLE_COUNT, initRow);
+    datasetOutput.resize(SAMPLE_COUNT);
 
-    uint tmp;
-    for (int y = 0; y < N; y++) {
-        for (int x = 0; x < DIM; x++) {
-            in >> tmp;
-            datasetInput[y][x] = static_cast<bool>(tmp);
+    for (int y = 0; y < SAMPLE_COUNT; ++y) {
+        for (int x = 0; x < SAMPLE_DIMENSION; ++x) {
+            in >> datasetInput[y][x];
         }
-        in >> tmp;
-        codomain[y] = static_cast<bool>(tmp);
+        in >> datasetOutput[y];
     }
-
-
-//    vector<BoolV> domain;
-    for (int x = 0; x < DIM; x++) {
-        vector<bool> v;
-        v.resize(N, 0);
-        for (int y = 0; y < N; y++) {
-            v[y] = datasetInput[y][x];
-        }
-        domain.push_back(v);
-    }
-
 
     in.close();
 
-    N_SIZE = N;
-    SAMPLE_DIMENSION = DIM;
+    return true;
 }
 
-
-std::pair<std::vector<bool>, bool> Dataset::getSample(int i) const {
-    return std::make_pair(datasetInput[i], codomain[i]);
+std::pair<std::vector<gp_val_t>, gp_val_t> Dataset::getSample(int i) const
+{
+    return std::make_pair(datasetInput[i], datasetOutput[i]);
 }
 
-int Dataset::dim() const {
+int Dataset::dim() const
+{
     return SAMPLE_DIMENSION;
 }
 
-const std::vector<bool> &Dataset::getOutputVector() const {
-    return codomain;
+const std::vector<gp_val_t>& Dataset::getOutputVector() const
+{
+    return datasetOutput;
 }
-
-std::vector<bool> &Dataset::getSampleInputVector(int i) {
-    return domain[i];
-}
-
-

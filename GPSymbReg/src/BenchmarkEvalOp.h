@@ -9,7 +9,7 @@
 class BenchmarkEvalOp : public EvaluateOp {
 public:
     ~BenchmarkEvalOp() override;
-
+    
     void registerParameters(StateP state) override;
 
     bool initialize(StateP) override;

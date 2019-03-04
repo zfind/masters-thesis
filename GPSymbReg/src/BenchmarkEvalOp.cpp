@@ -10,7 +10,7 @@ void BenchmarkEvalOp::registerParameters(StateP state)
 bool BenchmarkEvalOp::initialize(StateP state)
 {
     State* pState = state.get();
-    LOG = [pState] (int level, std::string msg) {
+    LOG = [pState](int level, std::string msg) {
         ECF_LOG(pState, level, msg);
     };
 
@@ -43,21 +43,25 @@ FitnessP BenchmarkEvalOp::evaluate(IndividualP individual)
     FitnessP d_fitness = cudaPostfixEvalOp->evaluate(individual);
     gpuTimer.pause();
 
-    // TODO move to Logger
-    //  number of digits in double print
-    std::cerr.precision(std::numeric_limits<double>::max_digits10);
-    if (fabs(h_fitness->getValue() - d_fitness->getValue()) >
-            DOUBLE_EQUALS) {     // std::numeric_limits<double>::epsilon()
-        std::cerr << "WARN Host-device difference\t" << "host:\t" << h_fitness->getValue() << "\tdev:\t"
-                  << d_fitness->getValue() << "\tdiff:\t"
-                  << fabs(h_fitness->getValue() - d_fitness->getValue()) << endl;
+    if (fabs(h_fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
+        std::stringstream ss;
+        ss.precision(std::numeric_limits<double>::max_digits10);
+        ss << "WARN Host-device difference\t"
+           << "\thost:\t" << h_fitness->getValue()
+           << "\tdev:\t" << d_fitness->getValue()
+           << "\tdiff:\t" << fabs(h_fitness->getValue() - d_fitness->getValue());
+        LOG(1, ss.str());
     }
+
     if (fabs(fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
-        std::cerr << "WARN ECF-device difference\t" << "ecf:\t" << fitness->getValue() << "host:\t"
-                  << h_fitness->getValue()
-                  << "\tdev:\t" << d_fitness->getValue()
-                  << "\tdiff:\t"
-                  << fabs(fitness->getValue() - d_fitness->getValue()) << endl;
+        std::stringstream ss;
+        ss.precision(std::numeric_limits<double>::max_digits10);
+        ss << "WARN ECF-device difference\t"
+           << "ecf:\t" << fitness->getValue()
+           << "\thost:\t" << h_fitness->getValue()
+           << "\tdev:\t" << d_fitness->getValue()
+           << "\tdiff:\t" << fabs(fitness->getValue() - d_fitness->getValue());
+        LOG(1, ss.str());
     }
 
     return fitness;

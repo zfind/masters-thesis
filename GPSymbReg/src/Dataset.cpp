@@ -6,7 +6,11 @@
 Dataset::Dataset(const std::string& filename)
 {
     if (!loadFromFile(filename)) {
-        std::cerr << "Error reading file." << std::endl;
+        std::cerr << "ERROR:\t"
+                  << "Can't read file: "
+                  << filename
+                  << "Exiting."
+                  << std::endl;
         exit(1);
     }
 }
@@ -28,13 +32,14 @@ gp_val_t Dataset::getSampleOutput(int i) const
 
 bool Dataset::loadFromFile(const std::string& filename)
 {
-    // TODO add error checking
-
     std::ifstream in(filename);
 
     if (!in) {
-        std::cerr << "Cannot open file." << std::endl;
-        exit(-1);
+        std::cerr << "ERROR:\t"
+                  << "Can't open file: "
+                  << filename
+                  << std::endl;
+        return false;
     }
 
     in >> SAMPLE_COUNT;
@@ -43,16 +48,13 @@ bool Dataset::loadFromFile(const std::string& filename)
     std::vector<gp_val_t> initRow;
     initRow.resize(SAMPLE_DIMENSION, 0.);
     datasetInput.resize(SAMPLE_COUNT, initRow);
+    datasetOutput.resize(SAMPLE_COUNT);
 
     for (int y = 0; y < SAMPLE_COUNT; ++y) {
         for (int x = 0; x < SAMPLE_DIMENSION; ++x) {
             in >> datasetInput[y][x];
         }
-    }
-
-    datasetOutput.resize(SAMPLE_COUNT);
-    for (int i = 0; i < SAMPLE_COUNT; ++i) {
-        in >> datasetOutput[i];
+        in >> datasetOutput[y];
     }
 
     in.close();

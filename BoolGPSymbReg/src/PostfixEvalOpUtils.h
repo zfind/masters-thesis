@@ -4,10 +4,8 @@
 #include <ECF/ECF.h>
 
 using gp_code_t = uint32_t;
-using gp_val_t = uint8_t;
+using gp_val_t = unsigned char;
 using gp_fitness_t = uint32_t;
-
-typedef unsigned char BOOL_TYPE;
 
 const double DOUBLE_EQUALS = 1E-4;
 const int MAX_PROGRAM_SIZE = 2048;

@@ -16,7 +16,8 @@ public:
     FitnessP evaluate(IndividualP individual) override;
 
 private:
-    std::shared_ptr<Dataset> dataset;
+    std::vector<std::vector<bool>> domain;
+    std::vector<bool> codomain;
 
     Timer ecfTimer;
 

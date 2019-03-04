@@ -2,11 +2,7 @@
 
 #include <stack>
 
-using namespace std;
-
-// put "DBG(x) x" to enable debug printout
-#define DBG(x)
-#define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
+#define CPU_EVALUATE_ERROR do { LOG(1, "ERROR: Unknown operation code"); return NAN; } while(0);
 
 void CpuPostfixEvalOp::registerParameters(StateP state)
 {
@@ -26,25 +22,10 @@ bool CpuPostfixEvalOp::initialize(StateP state)
     voidP pEntry = state->getRegistry()->getEntry("dataset.filename");
     std::string datasetFilename = *(static_cast<std::string*>(pEntry.get()));
 
-    uint BUFFER_SIZE = MAX_PROGRAM_SIZE * (sizeof(uint) + sizeof(double));
-
-    programBuffer = new char[BUFFER_SIZE];
-
     dataset = std::make_unique<Dataset>(datasetFilename);
 
-    int NUM_SAMPLES = dataset->size();
-    int INPUT_DIMENSION = dataset->dim();
-
-    this->datasetInput.resize(NUM_SAMPLES);
-    this->datasetOutput.resize(NUM_SAMPLES);
-
-    for (uint y = 0; y < NUM_SAMPLES; y++) {
-        this->datasetInput[y].resize(INPUT_DIMENSION);
-        for (uint x = 0; x < INPUT_DIMENSION; x++) {
-            this->datasetInput[y][x] = (BOOL_TYPE) dataset->getSampleInput(y)[x];
-        }
-        this->datasetOutput[y] = (BOOL_TYPE) dataset->getSampleOutput(y);
-    }
+    size_t BUFFER_SIZE = MAX_PROGRAM_SIZE * sizeof(gp_code_t);
+    programBuffer = new char[BUFFER_SIZE];
 
     return true;
 }
@@ -65,17 +46,14 @@ FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual)
 {
     cpuTimer.start();
 
-    //  convert to postfix
     conversionTimer.start();
     int programSize;
     PostfixEvalOpUtils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
-    //  evaluate on CPU
     vector<gp_val_t> h_result; // TODO move to h_evaluate()
     gp_fitness_t h_fitness = h_evaluate(programBuffer, programSize, h_result);
 
-    // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
     fitness->setValue(h_fitness);
 
@@ -90,8 +68,8 @@ uint CpuPostfixEvalOp::h_evaluate(char* buffer, int programSize, vector<gp_val_t
 
     gp_fitness_t fitness = 0;
     for (int i = 0; i < dataset->size(); ++i) {
-        result[i] = h_evaluateIndividual(buffer, programSize, datasetInput[i]);
-        if (result[i] != datasetOutput[i]) {
+        result[i] = h_evaluateIndividual(buffer, programSize, dataset->getSampleInput(i));
+        if (result[i] != dataset->getSampleOutput(i)) {
             fitness++;
         }
     }
@@ -103,10 +81,10 @@ gp_val_t CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, int programSize, c
 {
     gp_code_t* program = reinterpret_cast<gp_code_t*>(buffer);
 
-    gp_val_t stack[programSize];
+    bool stack[programSize];
 
     int SP = 0;
-    gp_val_t o1, o2, tmp;
+    bool o1, o2, tmp;
 
     for (int i = 0; i < programSize; ++i) {
 
@@ -136,8 +114,8 @@ gp_val_t CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, int programSize, c
             default:
                 CPU_EVALUATE_ERROR
             }
-
         }
+
         else if (program[i] >= ARITY_1) {
             o1 = stack[--SP];
 
@@ -148,14 +126,14 @@ gp_val_t CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, int programSize, c
             default:
                 CPU_EVALUATE_ERROR
             }
-
         }
+
         else if (program[i] >= VAR && program[i] < CONST) {
             gp_code_t code = program[i];
             int idx = code - VAR;
             tmp = input[idx];
-
         }
+
         else {
             CPU_EVALUATE_ERROR
         }
@@ -163,6 +141,7 @@ gp_val_t CpuPostfixEvalOp::h_evaluateIndividual(char* buffer, int programSize, c
         stack[SP++] = tmp;
     }
 
-    gp_val_t result = stack[--SP];
+    gp_val_t result = stack[--SP] ? '1' : '0';
+
     return result;
 }

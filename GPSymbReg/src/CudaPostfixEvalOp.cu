@@ -126,7 +126,7 @@ gp_fitness_t CudaPostfixEvalOp::d_evaluate(char* buffer, int PROGRAM_SIZE, vecto
     dim3 grid((N_SAMPLES + block.x - 1) / block.x, 1);
     size_t SHARED_MEM_SIZE = PROGRAM_SIZE * sizeof(gp_code_t);
 
-    d_evaluateIndividualKernel << < grid, block, SHARED_MEM_SIZE >> > (
+    d_evaluateIndividualKernel<<< grid, block, SHARED_MEM_SIZE >>>(
             d_program, PROGRAM_SIZE, BUFFER_PROGRAM_SIZE,
                     d_datasetInput, d_datasetOutput,
                     d_resultOutput, d_resultFitness,

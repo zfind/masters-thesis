@@ -25,20 +25,13 @@ __global__ void d_evaluateIndividual(gp_code_t* d_program,
 
     if (tid >= N) return;
 
-
-    // in global memory, slow
-    //    double *stack = d_globalStack + tid * PROG_SIZE;
-    // in local, faster
-    gp_val_t stack[MAX_STACK_SIZE];
-
-    //  stack in low latency shared memory
-    //    extern __shared__ double stackChunk[];
-    //    double *stack = stackChunk + threadIdx.x * PROG_SIZE;
+    // in local memory, faster than global
+    bool stack[MAX_STACK_SIZE];
 
     gp_val_t* inputSample = d_datasetInput + tid * DIM;
 
     int SP = 0;
-    gp_val_t o1, o2, tmp;
+    bool o1, o2, tmp;
     gp_code_t code;
     int idx;
 
@@ -97,7 +90,7 @@ __global__ void d_evaluateIndividual(gp_code_t* d_program,
         stack[SP++] = tmp;
     }
 
-    gp_val_t result = stack[--SP];
+    gp_val_t result = stack[--SP] ? '1' : '0';
 
     //    d_resultOutput[tid] = result;
 
@@ -118,23 +111,16 @@ gp_fitness_t CudaPostfixEvalOp::d_evaluate(char* postfixMem, int programSize, ve
     dim3 grid((NUM_SAMPLES + block.x - 1) / block.x, 1);
     size_t SHARED_MEM_SIZE = programSize * sizeof(gp_code_t);
 
-    d_evaluateIndividual << < grid, block, SHARED_MEM_SIZE >> > (d_program,
+    d_evaluateIndividual<<< grid, block, SHARED_MEM_SIZE >>>(d_program,
             d_datasetInput, d_datasetOutput, d_resultOutput, d_resultFitness,
             NUM_SAMPLES, INPUT_DIMENSION, programSize);
 
-
-    // ukljuci u kernelu!!!
+    // uncomment in kernel if needed
     //    result.resize(NUM_SAMPLES, 0);
     //    cudaMemcpy(&result[0], d_resultOutput, NUM_SAMPLES * sizeof(gp_val_t), cudaMemcpyDeviceToHost);
 
     gp_fitness_t fitness = 0;
     cudaMemcpy(&fitness, d_resultFitness, sizeof(gp_fitness_t), cudaMemcpyDeviceToHost);
-
-    //    for (uint i = 0; i < NUM_SAMPLES; i++) {
-    //        if (datasetOutput[i] != result[i]) {
-    //            fitness++;
-    //        }
-    //    }
 
     return fitness;
 }

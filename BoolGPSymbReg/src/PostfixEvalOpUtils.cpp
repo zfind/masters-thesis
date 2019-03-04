@@ -2,12 +2,11 @@
 
 #include <stack>
 
-using namespace std;
-
 #define DBG(x)
 
-void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char *postfixMem, int &PROG_SIZE) {
-    DBG(cerr << "=====================================================" << endl;)
+void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char* postfixMem, int& PROG_SIZE)
+{
+    DBG(std::cerr << "=====================================================" << std::endl;)
 
     uint nTreeSize, nTree;
     uint nTrees = (uint) individual->size();
@@ -19,12 +18,12 @@ void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char *postfixM
         DBG(
                 for (int i = 0; i < nTreeSize; i++) {
                     string primName = (*pTree)[i]->primitive_->getName();
-                    cerr << primName << " ";
+                    std::cerr << primName << " ";
                 }
-                cerr << endl;)
+                std::cerr << endl;)
 
         //  convert to postfix
-        stack<vector<int>> st;
+        std::stack<std::vector<int>> st;
         int length = nTreeSize;
         for (int i = length - 1; i >= 0; i--) {
             int arity = (*pTree)[i]->primitive_->getNumberOfArguments();
@@ -36,82 +35,77 @@ void PostfixEvalOpUtils::ConvertToPostfix(IndividualP individual, char *postfixM
                 op1.insert(op1.end(), op2.begin(), op2.end());
                 op1.push_back(i);
                 st.push(op1);
-            } else if (arity == 1) {
+            }
+            else if (arity == 1) {
                 vector<int> op1 = st.top();
                 st.pop();
                 op1.push_back(i);
                 st.push(op1);
-            } else {
+            }
+            else {
                 vector<int> tmp;
                 tmp.push_back(i);
                 st.push(tmp);
             }
         }
-        vector<int> result = st.top();
+        std::vector<int> result = st.top();
 
 
-        //  postfix ispis
+        //  postfix print
         DBG(
                 for (int i = 0; i < result.size(); i++) {
                     string pName = (*pTree)[result[i]]->primitive_->getName();
-                    cerr << pName << " ";
+                    std::cerr << pName << " ";
                 }
-                cerr << endl;)
+                std::cerr << endl;)
 
 
-        DBG(cerr << "Velicina:\t" << length << endl;)
+        DBG(std::cerr << "Length:\t" << length << endl;)
 
         PROG_SIZE = length;
-        uint *program = (uint *) postfixMem;
+        gp_code_t* program = reinterpret_cast<gp_code_t*>(postfixMem);
 
         for (int i : result) {
             string pName = (*pTree)[i]->primitive_->getName();
             if (pName == "AND") {
                 *program = AND;
                 program++;
-            } else if (pName == "OR") {
+            }
+            else if (pName == "OR") {
                 *program = OR;
                 program++;
-            } else if (pName == "NOT") {
+            }
+            else if (pName == "NOT") {
                 *program = NOT;
                 program++;
-            } else if (pName == "XOR") {
+            }
+            else if (pName == "XOR") {
                 *program = XOR;
                 program++;
-            } else if (pName == "XNOR") {
+            }
+            else if (pName == "XNOR") {
                 *program = XNOR;
                 program++;
-            } else if (pName == "NAND") {
+            }
+            else if (pName == "NAND") {
                 *program = NAND;
                 program++;
-            } else if (pName == "NOR") {
+            }
+            else if (pName == "NOR") {
                 *program = NOR;
                 program++;
-            } else if (pName[0] == 'v') {
+            }
+            else if (pName[0] == 'v') {
                 string xx = pName.substr(1);
-                uint idx = VAR + (uint) stoi(xx);
+                gp_code_t idx = VAR + stoi(xx);
                 *program = idx;
                 program++;
-//            } else if (pName == "1") {
-//                *program = CONST;
-//                program++;
-//                *programConstants = 1.;
-//                programConstants++;
-//                CONST_SIZE++;
-//            } else if (pName[0] == 'D' && pName[1] == '_') {
-//                *program = CONST;
-//                program++;
-//                double value;
-//                (*pTree)[i]->primitive_->getValue(&value);
-//                *programConstants = value;
-//                programConstants++;
-//                CONST_SIZE++;
-            } else {
-                cerr << pName << endl;
+            }
+            else {
+                std::cerr << "ERROR: Can't convert to postfix, unknown node name " << pName << std::endl;
+                return;
             }
         }
-
-        // DBG(printSolution(tmp, tmpd);)
     }
 
     DBG(cerr << "*******************************************************" << endl;)

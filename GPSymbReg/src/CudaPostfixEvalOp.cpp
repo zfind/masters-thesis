@@ -3,29 +3,15 @@
 #include <stack>
 #include <cuda_runtime_api.h>
 
-using namespace std;
-
-// put "DBG(x) x" to enable debug printout
-#define DBG(x)
-#define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
-#define GPU_EVALUATE_ERROR do {d_resultOutput[tid] = NAN; return;} while(0);
-
-extern "C"
-__global__ void d_evaluateIndividualKernel(gp_code_t* d_program, int PROGRAM_SIZE, size_t BUFFER_PROGRAM_SIZE,
-        gp_val_t* d_datasetInput, gp_val_t* d_datasetOutput,
-        gp_val_t* d_resultOutput, gp_fitness_t* d_resultFitness,
-        int N_SAMPLES, int SAMPLE_DIMENSION);
-
 void CudaPostfixEvalOp::registerParameters(StateP state)
 {
     state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
 }
 
-// called only once, before the evolution  generates training data
 bool CudaPostfixEvalOp::initialize(StateP state)
 {
     State* pState = state.get();
-    LOG = [pState] (int level, std::string msg) {
+    LOG = [pState](int level, std::string msg) {
         ECF_LOG(pState, level, msg);
     };
 
@@ -58,7 +44,7 @@ bool CudaPostfixEvalOp::initialize(StateP state)
     gp_val_t* h_input = new gp_val_t[N_SAMPLES * SAMPLE_DIMENSION];
     gp_val_t* p_input = h_input;
     for (int i = 0; i < N_SAMPLES; ++i) {
-        const std::vector<gp_val_t>& inputVector = dataset->getSampleInput(i);
+        auto inputVector = dataset->getSampleInput(i);
         std::copy(inputVector.cbegin(), inputVector.cend(), p_input);
         p_input += SAMPLE_DIMENSION;
     }
@@ -93,17 +79,14 @@ FitnessP CudaPostfixEvalOp::evaluate(IndividualP individual)
 {
     gpuTimer.start();
 
-    //  convert to postfix
     conversionTimer.start();
     int programSize;
     PostfixEvalOpUtils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
-    // evaluate on GPU
     vector<gp_val_t> d_result;  // TODO move to d_evaluate() if needed
     gp_fitness_t d_fitness = d_evaluate(programBuffer, programSize, d_result);
 
-    // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
     fitness->setValue(d_fitness);
 

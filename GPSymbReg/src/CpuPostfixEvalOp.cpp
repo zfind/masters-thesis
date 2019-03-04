@@ -2,22 +2,17 @@
 
 #include <stack>
 
-using namespace std;
-
-// put "DBG(x) x" to enable debug printout
-#define DBG(x)
-#define CPU_EVALUATE_ERROR do {cerr << "ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" << endl; return NAN; } while(0);
+#define CPU_EVALUATE_ERROR do { LOG(1, "ERROR: Unknown operation code"); return NAN; } while(0);
 
 void CpuPostfixEvalOp::registerParameters(StateP state)
 {
-    state->getRegistry()->registerEntry("dataset.filename", (voidP)(new std::string), ECF::STRING);
+    state->getRegistry()->registerEntry("dataset.filename", (voidP) (new std::string), ECF::STRING);
 }
 
-// called only once, before the evolution  generates training data
 bool CpuPostfixEvalOp::initialize(StateP state)
 {
     State* pState = state.get();
-    LOG = [pState] (int level, std::string msg) {
+    LOG = [pState](int level, std::string msg) {
         ECF_LOG(pState, level, msg);
     };
 
@@ -44,17 +39,14 @@ FitnessP CpuPostfixEvalOp::evaluate(IndividualP individual)
 {
     cpuTimer.start();
 
-    //  convert to postfix
     conversionTimer.start();
     int programSize;
     PostfixEvalOpUtils::ConvertToPostfix(individual, programBuffer, programSize);
     conversionTimer.pause();
 
-    //  evaluate on CPU
     vector<gp_val_t> h_result; // TODO move to h_evaluate()
     gp_fitness_t h_fitness = h_evaluate(programBuffer, programSize, h_result);
 
-    // we try to minimize the function value, so we use FitnessMin fitness (for minimization problems)
     FitnessP fitness(new FitnessMin);
     fitness->setValue(h_fitness);
 

@@ -1,13 +1,20 @@
 # BoolGPSymbReg 
 
-This repo contains example of boolean symbolic regression problem solved using ECF framework.
+This project contains example of boolean symbolic regression problem solved using ECF framework.
 To speed up execution, genetic programs are translated to postfix expression and executed using evaluator implemented in CUDA.
 
-Build:
+## Build
 
-    chmod +x
+    chmod +x build.sh
     ./build.sh
 
-Run:
+## Run
 
+    # Create test dataset:
+    cd data/
+    python3 input_generator.py > input.txt
+    cd ../
+    
+    # Run executable:
+    chmod +x BoolGPSymbReg
     ./BoolGPSymbReg data/parameters.txt

@@ -43,18 +43,22 @@ FitnessP BenchmarkEvalOp::evaluate(IndividualP individual)
     FitnessP d_fitness = cudaPostfixEvalOp->evaluate(individual);
     gpuTimer.pause();
 
-    if (fabs(h_fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) { // std::numeric_limits<double>::epsilon()
-        std::cerr << "WARN Host-device difference\t"
-                << "host:\t" << h_fitness->getValue()
-             << "\tdev:\t" << d_fitness->getValue()
-             << "\tdiff:\t" << fabs(h_fitness->getValue() - d_fitness->getValue()) << endl;
+    if (fabs(h_fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
+        std::stringstream ss;
+        ss << "WARN Host-device difference\t"
+           << "host:\t" << h_fitness->getValue()
+           << "\tdev:\t" << d_fitness->getValue()
+           << "\tdiff:\t" << fabs(h_fitness->getValue() - d_fitness->getValue());
+        LOG(1, ss.str());
     }
     if (fabs(fitness->getValue() - d_fitness->getValue()) > DOUBLE_EQUALS) {
-        std::cerr << "WARN ECF-device difference\t"
+        std::stringstream ss;
+        ss << "WARN ECF-device difference\t"
              << "ecf:\t" << fitness->getValue()
              << "\thost:\t" << h_fitness->getValue()
              << "\tdev:\t" << d_fitness->getValue()
-             << "\tdiff:\t" << fabs(fitness->getValue() - d_fitness->getValue()) << endl;
+             << "\tdiff:\t" << fabs(fitness->getValue() - d_fitness->getValue());
+        LOG(1, ss.str());
     }
 
     return fitness;

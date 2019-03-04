@@ -23,9 +23,6 @@ private:
 private:
     std::shared_ptr<Dataset> dataset;
 
-    std::vector<std::vector<gp_val_t>> datasetInput;
-    std::vector<gp_val_t> datasetOutput;
-
     char* programBuffer;
 
     Timer conversionTimer, cpuTimer;
